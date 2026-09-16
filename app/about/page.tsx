@@ -125,11 +125,11 @@ export default function AboutPage() {
       {/* ========================================================= */}
 
       <section className="relative w-full border-b border-neutral-200 bg-[#f5f3ee]">
-        <div className="grid min-h-[680px] lg:grid-cols-[0.92fr_1.08fr]">
+        <div className="grid min-h-[680px] gap-6 p-4 sm:p-6 lg:grid-cols-[0.92fr_1.08fr] lg:gap-8 lg:p-8">
 
           {/* Hero Content */}
 
-          <div className="flex items-center px-6 py-20 sm:px-10 lg:px-14 lg:py-24 xl:px-20 2xl:px-28">
+          <div className="flex items-center px-2 py-16 sm:px-6 lg:px-10 lg:py-16 xl:px-16">
             <div className="w-full max-w-xl">
 
               <div className="flex items-center gap-3">
@@ -157,18 +157,18 @@ export default function AboutPage() {
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link
                   href="/products"
-                  className="group inline-flex items-center gap-3 bg-[#171717] px-6 py-3.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#c73572]"
+                  className="group inline-flex items-center gap-3 rounded-full bg-[#171717] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition duration-300 hover:bg-[#c73572] hover:shadow-md"
                 >
                   Explore Collection
 
-                  <span className="flex h-7 w-7 items-center justify-center bg-white/10 transition-transform duration-300 group-hover:translate-x-1">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition-transform duration-300 group-hover:translate-x-1">
                     <ArrowRight size={15} />
                   </span>
                 </Link>
 
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-6 py-3.5 text-sm font-semibold transition duration-300 hover:border-[#c73572] hover:text-[#c73572]"
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-7 py-3.5 text-sm font-semibold transition duration-300 hover:border-[#c73572] hover:text-[#c73572]"
                 >
                   Get in touch
                   <ArrowUpRight size={15} />
@@ -210,7 +210,7 @@ export default function AboutPage() {
 
           {/* Hero Image */}
 
-          <div className="relative min-h-[520px] overflow-hidden lg:min-h-full">
+          <div className="relative min-h-[420px] overflow-hidden rounded-[28px] shadow-sm lg:min-h-full">
             <img
               src="https://mulberries.shop/wp-content/uploads/2024/10/168A7362-595x397.jpg"
               alt="Mulberries fashion collection"
@@ -230,7 +230,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/40 text-white sm:flex">
+              <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/40 text-white backdrop-blur-sm sm:flex">
                 <ArrowDownIcon />
               </div>
             </div>
@@ -292,17 +292,17 @@ export default function AboutPage() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
 
           <div className="relative">
-            <div className="absolute -left-4 -top-4 h-24 w-24 border-l border-t border-[#c73572]/30" />
+            <div className="absolute -left-4 -top-4 h-24 w-24 rounded-tl-[28px] border-l border-t border-[#c73572]/30" />
 
-            <div className="relative overflow-hidden">
+            <div className="relative overflow-hidden rounded-[28px] shadow-sm">
               <img
                 src="https://mulberries.shop/wp-content/uploads/2024/10/mulberries-our-story.png"
                 alt="The Mulberries story"
-                className="h-[500px] w-full object-cover sm:h-[620px]"
+                className="h-[440px] w-full object-cover sm:h-[560px]"
               />
             </div>
 
-            <div className="absolute -bottom-5 right-5 bg-[#171717] px-6 py-5 text-white sm:right-8">
+            <div className="absolute -bottom-5 right-5 rounded-2xl bg-[#171717] px-6 py-5 text-white shadow-md sm:right-8">
               <p className="text-[9px] uppercase tracking-[0.25em] text-white/50">
                 Our journey
               </p>
@@ -386,17 +386,17 @@ export default function AboutPage() {
               </h2>
             </div>
 
-            <div className="grid border-t border-neutral-200 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {features.map((feature) => {
                 const Icon = feature.icon;
 
                 return (
                   <div
                     key={feature.title}
-                    className="border-b border-neutral-200 py-8 sm:px-7 sm:nth-[2]:border-l"
+                    className="rounded-2xl border border-neutral-200 bg-white p-7 transition duration-300 hover:border-[#c73572]/30 hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fbf0f5] text-[#a91d4f]">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fbf0f5] text-[#a91d4f]">
                         <Icon size={18} />
                       </div>
 
@@ -441,9 +441,9 @@ export default function AboutPage() {
               </h2>
             </div>
 
-            <div className="grid gap-px bg-white/10 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
 
-              <div className="bg-[#171717] p-7 sm:p-9">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 sm:p-9">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#e99ab8]">
                   01 — Vision
                 </p>
@@ -459,7 +459,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="bg-[#171717] p-7 sm:p-9">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 sm:p-9">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#e99ab8]">
                   02 — Mission
                 </p>
@@ -515,12 +515,12 @@ export default function AboutPage() {
 
           </div>
 
-          <div className="mt-8 grid gap-px bg-neutral-200 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {collections.map((collection) => (
               <Link
                 key={collection.title}
                 href="/products"
-                className="group relative min-h-[330px] bg-white p-7 transition duration-500 hover:bg-[#171717] hover:text-white sm:p-9"
+                className="group relative min-h-[330px] rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm transition duration-500 hover:-translate-y-1 hover:bg-[#171717] hover:text-white hover:shadow-lg sm:p-9"
               >
                 <div className="flex items-start justify-between">
 
@@ -575,12 +575,12 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
               {team.map((member) => (
                 <div key={member.name} className="group">
 
-                  <div className="relative aspect-[4/5] overflow-hidden bg-[#f5f3ee]">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#f5f3ee] shadow-sm">
                     <img
                       src={member.image}
                       alt={member.name}
@@ -590,7 +590,7 @@ export default function AboutPage() {
                     <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition group-hover:opacity-100" />
                   </div>
 
-                  <div className="border-b border-neutral-200 py-4">
+                  <div className="py-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="text-sm font-semibold">
@@ -604,7 +604,7 @@ export default function AboutPage() {
 
                       <ArrowUpRight
                         size={14}
-                        className="text-neutral-300"
+                        className="mt-0.5 shrink-0 text-neutral-300"
                       />
                     </div>
                   </div>
@@ -653,14 +653,14 @@ export default function AboutPage() {
 
               <Link
                 href="/products"
-                className="mt-8 inline-flex items-center gap-3 bg-white px-6 py-3.5 text-sm font-semibold text-[#171717] transition hover:bg-[#c73572] hover:text-white"
+                className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#171717] shadow-sm transition hover:bg-[#c73572] hover:text-white"
               >
                 Shop Mulberries
                 <ArrowRight size={16} />
               </Link>
             </div>
 
-            <div className="grid gap-px bg-white/10 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {[
                 {
                   title: "Thoughtful Selection",
@@ -681,7 +681,7 @@ export default function AboutPage() {
               ].map((item, index) => (
                 <div
                   key={item.title}
-                  className="bg-[#171717] p-7 sm:p-9"
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 sm:p-9"
                 >
                   <span className="text-[10px] font-medium tracking-[0.2em] text-white/25">
                     0{index + 1}
@@ -736,11 +736,11 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="border-t border-neutral-200">
+          <div className="space-y-3">
             {faqs.map((faq, index) => (
               <details
                 key={faq.question}
-                className="group border-b border-neutral-200"
+                className="group rounded-2xl border border-neutral-200 bg-white px-6 open:shadow-sm"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-6 text-sm font-semibold sm:text-base">
                   <span className="flex items-center gap-5">
@@ -774,11 +774,11 @@ export default function AboutPage() {
       {/* ========================================================= */}
 
       <section className="w-full border-y border-neutral-200 bg-white">
-        <div className="mx-auto grid max-w-7xl sm:grid-cols-3">
+        <div className="mx-auto grid max-w-7xl gap-4 p-4 sm:grid-cols-3 sm:gap-4 sm:p-6">
 
           <Link
             href="/contact"
-            className="group border-b border-neutral-200 px-6 py-8 transition hover:bg-[#fbf0f5] sm:border-b-0 sm:border-r lg:px-8"
+            className="group rounded-2xl border border-neutral-200 px-6 py-8 transition hover:border-[#c73572]/30 hover:bg-[#fbf0f5] lg:px-8"
           >
             <div className="flex items-start justify-between">
               <MessageCircle
@@ -803,7 +803,7 @@ export default function AboutPage() {
 
           <a
             href="mailto:geethy@gmail.com"
-            className="group border-b border-neutral-200 px-6 py-8 transition hover:bg-[#fbf0f5] sm:border-b-0 sm:border-r lg:px-8"
+            className="group rounded-2xl border border-neutral-200 px-6 py-8 transition hover:border-[#c73572]/30 hover:bg-[#fbf0f5] lg:px-8"
           >
             <div className="flex items-start justify-between">
               <Mail
@@ -828,7 +828,7 @@ export default function AboutPage() {
 
           <Link
             href="/contact"
-            className="group px-6 py-8 transition hover:bg-[#fbf0f5] lg:px-8"
+            className="group rounded-2xl border border-neutral-200 px-6 py-8 transition hover:border-[#c73572]/30 hover:bg-[#fbf0f5] lg:px-8"
           >
             <div className="flex items-start justify-between">
               <MapPin
@@ -892,11 +892,11 @@ export default function AboutPage() {
 
           <Link
             href="/products"
-            className="group mt-9 inline-flex items-center gap-4 bg-[#111111] px-7 py-4 text-sm font-semibold text-white transition duration-300 hover:bg-[#c73572]"
+            className="group mt-9 inline-flex items-center gap-4 rounded-full bg-[#111111] px-7 py-4 text-sm font-semibold text-white shadow-sm transition duration-300 hover:bg-[#c73572] hover:shadow-md"
           >
             Start Shopping
 
-            <span className="flex h-7 w-7 items-center justify-center bg-white/10 transition-transform duration-300 group-hover:translate-x-1">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition-transform duration-300 group-hover:translate-x-1">
               <ArrowRight size={15} />
             </span>
           </Link>
