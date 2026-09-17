@@ -17,7 +17,7 @@ export default function NewArrivals() {
               <Sparkles size={15} strokeWidth={1.8} />
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em]">Just arrived</p>
             </div>
-            <h2 className="max-w-xl text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-[#171717] sm:text-5xl lg:text-6xl">
+            <h2 className="max-w-xl text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-[#171717] sm:text-5xl md:text-4xl lg:text-6xl">
               New arrivals,
               <span className="font-normal italic text-[#c73572]"> thoughtfully chosen.</span>
             </h2>
@@ -32,8 +32,8 @@ export default function NewArrivals() {
           </Link>
         </div>
 
-        <div className="grid overflow-hidden rounded-[28px] border border-[#e5e1da] bg-white lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="flex min-h-[390px] flex-col justify-between bg-[#f7f4ef] p-7 sm:min-h-[460px] sm:p-10 lg:p-12">
+        <div className="grid overflow-hidden rounded-[28px] border border-[#e5e1da] bg-white md:grid-cols-[0.9fr_1.1fr]">
+          <div className="flex min-h-[390px] flex-col justify-between bg-[#f7f4ef] p-7 sm:min-h-[460px] sm:p-8 md:min-h-[400px] md:p-7 lg:min-h-[540px] lg:p-12">
             <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.25em] text-neutral-500">
               <span>01 / 04</span>
               <span>Mulberries edit</span>
@@ -41,9 +41,9 @@ export default function NewArrivals() {
 
             <div className="max-w-md">
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#c73572]">The latest edit</p>
-              <h3 className="mt-4 text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-[#171717] sm:text-5xl">Fresh pieces for your next occasion.</h3>
-              <p className="mt-5 max-w-sm text-sm leading-6 text-neutral-600">From everyday statements to celebration-ready classics, find something made to feel distinctly yours.</p>
-              <Link href="/products" className="group mt-7 inline-flex items-center gap-3 rounded-full bg-[#171717] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#c73572]">
+              <h3 className="mt-4 text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-[#171717] sm:text-5xl md:text-3xl lg:text-5xl">Fresh pieces for your next occasion.</h3>
+              <p className="mt-5 max-w-sm text-sm leading-6 text-neutral-600 md:mt-4 md:text-xs md:leading-5 lg:text-sm lg:leading-6">From everyday statements to celebration-ready classics, find something made to feel distinctly yours.</p>
+              <Link href="/products" className="group mt-7 inline-flex items-center gap-3 rounded-full bg-[#171717] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#c73572] md:mt-5 md:px-4 md:py-3 md:text-xs lg:mt-7 lg:px-5 lg:py-3.5 lg:text-sm">
                 Explore collection
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition-transform group-hover:translate-x-1"><ArrowRight size={14} /></span>
               </Link>
@@ -52,10 +52,10 @@ export default function NewArrivals() {
             <p className="text-xs text-neutral-500">Curated with care for every occasion</p>
           </div>
 
-          <div className="relative min-h-[360px] overflow-hidden sm:min-h-[500px] lg:min-h-[540px]">
+          <div className="relative min-h-[360px] overflow-hidden sm:min-h-[500px] md:min-h-[400px] lg:min-h-[540px]">
             <Image src="/new-arrivals/new-arrivals-bg.jpg" alt="New arrivals collection" fill priority sizes="(max-width: 1024px) 100vw, 55vw" className="object-cover object-center transition duration-700 hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/5" />
-            <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between sm:bottom-8 sm:left-8 sm:right-8">
+            <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between sm:bottom-8 sm:left-8 sm:right-8 md:bottom-6 md:left-6 md:right-6 lg:bottom-8 lg:left-8 lg:right-8">
               <div className="text-white">
                 <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/75">New season</p>
                 <p className="mt-1 text-2xl font-medium tracking-tight sm:text-3xl">Freshly curated</p>
@@ -65,7 +65,7 @@ export default function NewArrivals() {
           </div>
         </div>
 
-        <div className="mt-14 sm:mt-16">
+        <div className="mt-12 sm:mt-14 md:mt-10 lg:mt-16">
           <div className="mb-7 flex items-end justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#c73572]">Shop the edit</p>

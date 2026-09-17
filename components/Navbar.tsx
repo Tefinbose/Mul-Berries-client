@@ -98,7 +98,7 @@ export default function Navbar() {
                 />
               </Link>
 
-              <div className="invisible absolute left-1/2 top-full z-50 w-[min(92vw,680px)] -translate-x-1/2 translate-y-2 pt-4 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+              <div className="invisible absolute left-0 top-full z-50 w-[min(92vw,680px)] max-w-[calc(100vw-2rem)] translate-y-2 pt-4 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                 <div className="grid grid-cols-[0.9fr_1.1fr] overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_18px_45px_rgba(23,23,23,0.14)]">
                   <Link
                     href="/products"
@@ -208,8 +208,8 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[106px] z-40 border-b border-neutral-200 bg-white shadow-lg lg:hidden">
-          <nav className="flex flex-col px-5 py-5">
+        <div className="fixed inset-x-0 bottom-0 top-[106px] z-40 overflow-y-auto overscroll-contain border-b border-neutral-200 bg-white shadow-lg lg:hidden">
+          <nav className="flex min-h-full flex-col px-5 py-5 pb-10">
             
             {/* MAIN LINKS */}
             {navLinks.map((link) => (

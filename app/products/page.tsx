@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ChevronDown,
   ChevronRight,
@@ -143,7 +144,7 @@ export default async function ProductsPage({
     <main className="min-h-screen bg-[#f1f3f6] text-[#171717]">
       {/* Search Header */}
       <section className="border-b border-[#dedad2] bg-white">
-        <div className="w-full px-3 py-4 sm:px-5 lg:px-6">
+        <div className="site-container py-4">
           <div className="flex items-center gap-4">
             <div className="hidden shrink-0 lg:block">
               <Link href="/">
@@ -180,7 +181,7 @@ export default async function ProductsPage({
 
       {/* Category Strip */}
       <section className="border-b border-[#dedad2] bg-white">
-        <div className="w-full overflow-x-auto px-3 sm:px-5 lg:px-6">
+        <div className="site-container overflow-x-auto">
           <div className="flex min-w-max items-center gap-1">
             {categories.map((category) => {
               const active =
@@ -210,7 +211,7 @@ export default async function ProductsPage({
       </section>
 
       {/* Breadcrumb */}
-      <div className="w-full px-3 pt-4 sm:px-5 lg:px-6">
+      <div className="site-container pt-5">
         <div className="flex items-center gap-2 text-xs">
           <Link
             href="/"
@@ -237,10 +238,10 @@ export default async function ProductsPage({
       </div>
 
       {/* Main Content */}
-      <section className="w-full px-3 py-4 sm:px-5 lg:px-6">
-        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)]">
+      <section className="site-container py-5 sm:py-6">
+        <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[272px_minmax(0,1fr)]">
           {/* Sidebar */}
-          <aside className="hidden h-fit overflow-hidden rounded-sm border border-[#e2e2e2] bg-white lg:block">
+          <aside className="sticky top-24 hidden h-fit overflow-hidden rounded-xl border border-[#e2e2e2] bg-white lg:block">
             <div className="flex items-center justify-between border-b border-[#eeeeee] px-4 py-4">
               <div className="flex items-center gap-2">
                 <Filter size={15} />
@@ -367,7 +368,7 @@ export default async function ProductsPage({
           {/* Products */}
           <div className="min-w-0">
             {/* Results Toolbar */}
-            <div className="mb-4 flex flex-col gap-3 border border-[#e2e2e2] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-5 flex flex-col gap-3 rounded-xl border border-[#e2e2e2] bg-white px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <h1 className="text-sm font-semibold">
                   {searchQuery
@@ -419,7 +420,7 @@ export default async function ProductsPage({
 
             {/* Product Grid */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 items-stretch gap-4 sm:grid-cols-3 lg:gap-5 xl:grid-cols-4">
                 {filteredProducts.map((product) => {
                   const discount = product.comparePrice
                     ? Math.round(
@@ -433,13 +434,15 @@ export default async function ProductsPage({
                     <Link
                       key={product.slug}
                       href={`/products/${product.slug}`}
-                      className="group min-w-0 overflow-hidden border border-[#e2e2e2] bg-white transition hover:shadow-[0_5px_20px_rgba(0,0,0,0.08)]"
+                      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e2e2e2] bg-white transition duration-300 hover:-translate-y-0.5 hover:border-[#c9b2bd] hover:shadow-[0_12px_30px_rgba(23,23,23,0.09)]"
                     >
-                      <div className="relative aspect-[4/5] overflow-hidden bg-[#f5f3ee]">
-                        <img
+                      <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f3ee]">
+                        <Image
                           src={product.image}
                           alt={product.name}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="object-cover transition duration-500 group-hover:scale-105"
                         />
 
                         {discount > 0 && (
@@ -450,7 +453,7 @@ export default async function ProductsPage({
                       </div>
 
                       <div className="p-3">
-                        <h2 className="line-clamp-2 min-h-[40px] text-xs font-medium leading-5 text-neutral-900 sm:text-sm">
+                        <h2 className="line-clamp-2 min-h-[40px] text-xs font-semibold leading-5 text-neutral-900 sm:text-sm">
                           {product.name}
                         </h2>
 
@@ -469,7 +472,7 @@ export default async function ProductsPage({
                           )}
                         </div>
 
-                        <div className="mt-2 flex items-center gap-1">
+                        <div className="mt-3 flex min-h-5 items-center gap-1">
                           <span className="flex items-center gap-1 bg-[#388e3c] px-1.5 py-0.5 text-[9px] font-semibold text-white">
                             4.5
                             <Star
@@ -499,7 +502,7 @@ export default async function ProductsPage({
                   </h2>
 
                   <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
-                    We couldn't find any products matching your
+                    We couldn&apos;t find any products matching your
                     search. Try a different keyword or browse all
                     products.
                   </p>

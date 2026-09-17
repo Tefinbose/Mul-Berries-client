@@ -55,7 +55,7 @@ export default function ProductSearch({
     <div className="relative w-full">
       <form
         onSubmit={handleSubmit}
-        className="flex h-11 w-full items-center overflow-hidden rounded-md bg-[#f0f3f5]"
+        className="flex h-12 w-full items-center overflow-hidden rounded-xl border border-[#e3dfe0] bg-white shadow-sm transition focus-within:border-[#a91d4f] focus-within:ring-2 focus-within:ring-[#a91d4f]/10"
       >
         <div className="flex w-full items-center">
           <Search
@@ -68,7 +68,7 @@ export default function ProductSearch({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search for products, categories and more"
-            className="h-full w-full bg-transparent px-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-500"
+            className="h-full w-full bg-transparent px-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
           />
 
           {search && (
@@ -84,7 +84,7 @@ export default function ProductSearch({
 
           <button
             type="submit"
-            className="flex h-full shrink-0 items-center justify-center bg-[#2874f0] px-5 text-sm font-semibold text-white transition hover:bg-[#1f65d1]"
+            className="mr-1 flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#a91d4f] px-5 text-sm font-semibold text-white transition hover:bg-[#8f1743] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a91d4f]/40 focus-visible:ring-offset-2"
           >
             Search
           </button>
@@ -92,7 +92,7 @@ export default function ProductSearch({
       </form>
 
       {search.trim() && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-md border border-neutral-200 bg-white shadow-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-[0_16px_40px_rgba(23,23,23,0.12)]">
           <div className="border-b border-neutral-100 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
             Products
           </div>
@@ -135,19 +135,19 @@ export default function ProductSearch({
                 `/products?search=${encodeURIComponent(search.trim())}`
               );
             }}
-            className="w-full px-4 py-3 text-left text-sm font-semibold text-[#2874f0] hover:bg-neutral-50"
+              className="w-full px-4 py-3 text-left text-sm font-semibold text-[#a91d4f] hover:bg-[#fff7fa]"
           >
-            View all results for "{search.trim()}"
+            View all results for &quot;{search.trim()}&quot;
           </button>
         </div>
       )}
 
       {search.trim() && suggestions.length === 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-md border border-neutral-200 bg-white px-4 py-5 shadow-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 rounded-xl border border-neutral-200 bg-white px-4 py-5 shadow-[0_16px_40px_rgba(23,23,23,0.12)]">
           <p className="text-sm text-neutral-600">
             No products found for{" "}
             <span className="font-semibold text-neutral-900">
-              "{search.trim()}"
+              &quot;{search.trim()}&quot;
             </span>
           </p>
 
@@ -157,7 +157,7 @@ export default function ProductSearch({
               setSearch("");
               router.push("/products");
             }}
-            className="mt-3 text-sm font-semibold text-[#2874f0]"
+            className="mt-3 text-sm font-semibold text-[#a91d4f]"
           >
             View all products
           </button>

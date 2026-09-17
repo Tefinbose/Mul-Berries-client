@@ -49,38 +49,38 @@ export default function WishlistPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-[#f5f3ee] text-[#171717]">
       {/* Header */}
-      <section className="border-b bg-stone-50 px-6 py-16">
-        <div className="mx-auto max-w-7xl">
-          <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-stone-500">
+      <section className="border-b border-[#e5e1da] bg-[#f5f3ee] px-5 py-12 sm:px-8 sm:py-14">
+        <div className="site-container">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#a91d4f]">
             Your Collection
           </p>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-stone-900 md:text-5xl">
+          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[#171717] sm:text-4xl">
             Wishlist
           </h1>
 
-          <p className="mt-4 max-w-xl text-stone-600">
+          <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-600 sm:text-base">
             Save the products you love and come back to them anytime.
           </p>
         </div>
       </section>
 
       {/* Wishlist */}
-      <section className="mx-auto max-w-7xl px-6 py-12">
+      <section className="site-container py-8 sm:py-10">
         {wishlist.length > 0 ? (
           <>
             {/* Top row */}
-            <div className="mb-8 flex items-center justify-between">
-              <p className="text-sm text-stone-600">
+            <div className="mb-6 flex items-center justify-between border-b border-[#e5e1da] pb-4">
+              <p className="text-sm font-medium text-neutral-600">
                 {wishlist.length}{" "}
                 {wishlist.length === 1 ? "item" : "items"} saved
               </p>
 
               <button
                 onClick={clearWishlist}
-                className="flex items-center gap-2 text-sm text-stone-600 transition hover:text-black"
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 transition hover:text-[#a91d4f]"
               >
                 <Trash2 size={16} />
                 Clear wishlist
@@ -88,14 +88,14 @@ export default function WishlistPage() {
             </div>
 
             {/* Products */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="overflow-hidden rounded-xl border border-[#e5e1da] bg-white shadow-sm">
               {wishlist.map((product) => (
                 <div
                   key={product.id}
-                  className="group overflow-hidden rounded-2xl border border-stone-200 bg-white"
+                  className="group flex flex-col gap-5 border-b border-[#eee9e8] p-4 last:border-b-0 sm:flex-row sm:items-center sm:p-5 lg:p-6"
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/5] overflow-hidden bg-stone-100">
+                  <div className="relative aspect-4/5 w-full shrink-0 overflow-hidden rounded-lg bg-[#f0eee8] sm:w-36 lg:w-40">
                     <img
                       src={product.image}
                       alt={product.name}
@@ -105,50 +105,55 @@ export default function WishlistPage() {
                     {/* Wishlist button */}
                     <button
                       onClick={() => removeItem(product.id)}
-                      className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md"
+                      className="absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition hover:text-[#a91d4f]"
                       aria-label="Remove from wishlist"
                     >
                       <Heart
                         size={20}
-                        className="fill-red-500 text-red-500"
+                        className="fill-[#a91d4f] text-[#a91d4f]"
                       />
                     </button>
                   </div>
 
                   {/* Details */}
-                  <div className="p-5">
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-stone-500">
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
                       {product.category}
                     </p>
 
-                    <h2 className="text-xl font-semibold text-stone-900">
-                      {product.name}
-                    </h2>
+                    <Link href={`/products/${product.slug}`} className="group/title">
+                      <h2 className="line-clamp-2 text-lg font-semibold leading-6 text-[#171717] transition group-hover/title:text-[#a91d4f] sm:text-xl">
+                        {product.name}
+                      </h2>
+                    </Link>
+
+                    <p className="mt-2 text-xs text-neutral-500">Usually delivered in 3-5 days</p>
 
                     <div className="mt-3 flex items-center gap-3">
-                      <span className="text-lg font-semibold">
+                      <span className="text-base font-bold text-[#171717] sm:text-lg">
                         ₹{product.price.toLocaleString("en-IN")}
                       </span>
 
-                      <span className="text-sm text-stone-400 line-through">
+                      <span className="text-xs text-neutral-400 line-through sm:text-sm">
                         ₹{product.oldPrice.toLocaleString("en-IN")}
                       </span>
                     </div>
 
-                    <div className="mt-5 flex gap-3">
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
                       <Link
                         href={`/products/${product.slug}`}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
+                        className="inline-flex items-center justify-center rounded-lg bg-[#171717] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#a91d4f] sm:text-sm"
                       >
                         View Product
                       </Link>
 
                       <button
                         onClick={() => removeItem(product.id)}
-                        className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 transition hover:bg-stone-200"
-                        aria-label="Remove product"
+                        className="inline-flex items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 transition hover:text-[#a91d4f]"
+                        aria-label={`Remove ${product.name} from wishlist`}
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
+                        Remove
                       </button>
                     </div>
                   </div>
@@ -158,22 +163,22 @@ export default function WishlistPage() {
           </>
         ) : (
           /* Empty wishlist */
-          <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-stone-100">
-              <ShoppingBag size={32} className="text-stone-500" />
+          <div className="flex min-h-100 flex-col items-center justify-center rounded-xl border border-[#e5e1da] bg-white px-6 text-center">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#f7e9ef]">
+              <ShoppingBag size={28} className="text-[#a91d4f]" />
             </div>
 
-            <h2 className="text-2xl font-semibold text-stone-900">
+            <h2 className="text-2xl font-semibold text-[#171717]">
               Your wishlist is empty
             </h2>
 
-            <p className="mt-2 max-w-md text-stone-500">
+            <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500">
               Save products you love and they will appear here.
             </p>
 
             <Link
               href="/products"
-              className="mt-6 rounded-full bg-stone-900 px-7 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
+              className="mt-6 rounded-lg bg-[#171717] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#a91d4f]"
             >
               Continue Shopping
             </Link>
