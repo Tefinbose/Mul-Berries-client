@@ -8,7 +8,7 @@ const slides = [
   {
     id: 1,
     image:
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1800&q=90",
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&w=2000&q=90",
     eyebrow: "NEW COLLECTION",
     title: "Elegance, Woven\nInto Every Moment",
     description:
@@ -18,7 +18,7 @@ const slides = [
   {
     id: 2,
     image:
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1800&q=90",
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&w=2000&q=90",
     eyebrow: "THE FESTIVE EDIT",
     title: "Celebrate In\nSomething Beautiful",
     description:
@@ -28,7 +28,7 @@ const slides = [
   {
     id: 3,
     image:
-      "https://images.unsplash.com/photo-1605763240000-7e93b172d754?auto=format&fit=crop&w=1800&q=90",
+      "https://images.unsplash.com/photo-1605763240000-7e93b172d754?auto=format&w=2000&q=90",
     eyebrow: "TIMELESS STYLE",
     title: "Tradition Meets\nModern Elegance",
     description:
@@ -52,80 +52,93 @@ export default function HeroSlider() {
 
   return (
     <section className="w-full bg-white">
-      {/* =====================================================
+      {/* =========================
           HERO
-      ====================================================== */}
-      <div className="relative w-full overflow-hidden">
-        {/* ===================================================
-            BACKGROUND IMAGE
-        ==================================================== */}
+      ========================== */}
+      <div className="relative w-full overflow-hidden bg-[#5b0d1c]">
         <div
           key={slide.id}
           className="
             relative
-            h-[360px]
+            h-[520px]
             w-full
-            bg-cover
-            bg-center
-            bg-no-repeat
-            transition-opacity
-            duration-500
+            overflow-hidden
 
-            sm:h-[420px]
+            sm:h-[560px]
 
-            md:h-[480px]
+            md:h-[600px]
 
-            lg:h-[calc(100svh-200px)]
+            lg:h-[calc(100svh-162px)]
+            lg:min-h-[600px]
+
+            xl:h-[680px]
           "
-          style={{
-            backgroundImage: `url(${slide.image})`,
-            backgroundPosition: "center 30%",
-          }}
         >
-          {/* =================================================
-              DARK GRADIENT
+          {/* HERO IMAGE */}
 
-              Helps the text remain readable.
-          ================================================== */}
-          <div
+          <img
+            key={slide.image}
+            src={slide.image}
+            alt={slide.title.replace("\n", " ")}
             className="
               absolute
               inset-0
+              h-full
+              w-full
+              object-cover
+              object-center
+            "
+          />
+
+          {/* LEFT DARK GRADIENT */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
               bg-gradient-to-r
-              from-black/65
-              via-black/30
+              from-black/70
+              via-black/35
               to-transparent
             "
           />
 
-          {/* =================================================
-              HERO CONTENT
-          ================================================== */}
+          {/* BOTTOM SOFT GRADIENT */}
+
           <div
-            key={`content-${slide.id}`}
             className="
+              pointer-events-none
               absolute
-              inset-y-0
-              left-0
-              flex
-              w-full
-              items-center
+              inset-x-0
+              bottom-0
+              h-32
+              bg-gradient-to-t
+              from-black/20
+              to-transparent
             "
-          >
-            <div
-              className="site-container"
-            >
+          />
+
+          {/* =========================
+              HERO CONTENT
+          ========================== */}
+
+          <div className="absolute inset-0 flex items-center">
+            <div className="site-container w-full">
               <div
                 className="
-                  max-w-[430px]
+                  max-w-[420px]
                   text-white
+
                   sm:max-w-[500px]
+
                   lg:max-w-[540px]
                 "
               >
                 {/* EYEBROW */}
-                <div className="mb-3 flex items-center gap-3 sm:mb-4">
-                  <span className="h-px w-7 bg-white sm:w-10" />
+
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="h-px w-8 bg-white sm:w-10" />
 
                   <p
                     className="
@@ -133,8 +146,10 @@ export default function HeroSlider() {
                       font-semibold
                       uppercase
                       tracking-[0.3em]
-                      text-white/80
+                      text-white/85
+
                       sm:text-[10px]
+
                       lg:text-[11px]
                     "
                   >
@@ -143,19 +158,20 @@ export default function HeroSlider() {
                 </div>
 
                 {/* TITLE */}
+
                 <h1
                   className="
                     whitespace-pre-line
-                    text-3xl
+                    text-4xl
                     font-semibold
-                    leading-[1.05]
-                    tracking-[-0.03em]
+                    leading-[1.04]
+                    tracking-[-0.035em]
 
-                    sm:text-4xl
+                    sm:text-[46px]
 
-                    md:text-5xl
+                    md:text-[54px]
 
-                    lg:text-6xl
+                    lg:text-[62px]
 
                     xl:text-[68px]
                   "
@@ -164,15 +180,15 @@ export default function HeroSlider() {
                 </h1>
 
                 {/* DESCRIPTION */}
+
                 <p
                   className="
-                    mt-4
+                    mt-5
                     max-w-[420px]
                     text-xs
                     leading-5
                     text-white/80
 
-                    sm:mt-5
                     sm:text-sm
                     sm:leading-6
 
@@ -183,101 +199,111 @@ export default function HeroSlider() {
                   {slide.description}
                 </p>
 
-                {/* CTA */}
-                <div className="mt-6 sm:mt-7">
+                {/* BUTTON */}
+
+                <div className="mt-7">
                   <Link
                     href="/products"
                     className="
+                      group
                       inline-flex
                       items-center
                       gap-3
                       rounded-full
                       bg-white
-                      px-5
-                      py-3
+                      px-6
+                      py-3.5
                       text-xs
                       font-semibold
                       text-neutral-950
                       transition-all
                       duration-300
+
                       hover:gap-4
                       hover:bg-[#971444]
                       hover:text-white
 
-                      sm:px-6
-                      sm:py-3.5
                       sm:text-sm
                     "
                   >
                     {slide.button}
 
                     <ArrowRight
-                      size={15}
+                      size={16}
                       strokeWidth={1.8}
+                      className="
+                        transition-transform
+                        duration-300
+                        group-hover:translate-x-1
+                      "
                     />
                   </Link>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ===================================================
-            SLIDER DOTS
-        ==================================================== */}
-        <div
-          className="
-            absolute
-            bottom-4
-            left-0
-            right-0
-            z-10
-            flex
-            items-center
-            justify-center
-            gap-2
-          "
-        >
-          {slides.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setCurrent(index)}
-              aria-label={`Go to slide ${index + 1}`}
-              className={`
-                h-[7px]
-                rounded-full
-                transition-all
-                duration-300
-                ${
-                  current === index
-                    ? "w-12 bg-white"
-                    : "w-[7px] bg-white/70"
-                }
-              `}
-            />
-          ))}
+          {/* =========================
+              SLIDER DOTS
+          ========================== */}
+
+          <div
+            className="
+              absolute
+              bottom-5
+              left-0
+              right-0
+              z-20
+              flex
+              items-center
+              justify-center
+              gap-2
+            "
+          >
+            {slides.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setCurrent(index)}
+                aria-label={`Go to slide ${index + 1}`}
+                aria-current={current === index ? "true" : undefined}
+                className={`
+                  h-[7px]
+                  rounded-full
+                  transition-all
+                  duration-300
+
+                  ${
+                    current === index
+                      ? "w-12 bg-white"
+                      : "w-[7px] bg-white/65 hover:bg-white"
+                  }
+                `}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* =====================================================
-          BENEFITS
-      ====================================================== */}
+      {/* =========================
+          BENEFITS BAR
+      ========================== */}
+
       <div className="border-b border-[#e5e5e5] bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-3">
-          {/* =================================================
-              FREE RETURNS
-          ================================================== */}
+          {/* FREE RETURNS */}
+
           <div
             className="
               flex
-              min-h-[112px]
+              min-h-[100px]
               flex-col
               items-center
               justify-center
               px-2
               text-center
-              lg:min-h-[110px]
+
+              sm:min-h-[110px]
             "
           >
             <div className="mb-2 text-[#e52d72]">
@@ -288,6 +314,7 @@ export default function HeroSlider() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                aria-hidden="true"
               >
                 <path d="M5 10.5 16 4l11 6.5v12L16 29 5 22.5v-12Z" />
                 <path d="m5 10.5 11 6 11-6" />
@@ -298,32 +325,58 @@ export default function HeroSlider() {
               </svg>
             </div>
 
-            <p className="text-[13px] font-bold text-[#303030] sm:text-[15px]">
+            <p
+              className="
+                text-[11px]
+                font-bold
+                text-[#303030]
+
+                sm:text-[14px]
+              "
+            >
               FREE RETURNS
             </p>
 
-            <p className="mt-0.5 text-[11px] text-[#444] sm:text-[12px]">
+            <p
+              className="
+                mt-0.5
+                text-[10px]
+                text-[#444]
+
+                sm:text-[12px]
+              "
+            >
               Within 7 days
             </p>
           </div>
 
-          {/* =================================================
-              CASH ON DELIVERY
-          ================================================== */}
+          {/* CASH ON DELIVERY */}
+
           <div
             className="
               relative
               flex
-              min-h-[112px]
+              min-h-[100px]
               flex-col
               items-center
               justify-center
               px-2
               text-center
-              lg:min-h-[110px]
+
+              sm:min-h-[110px]
             "
           >
-            <span className="absolute left-0 top-1/2 h-8 -translate-y-1/2 border-l border-[#d6d6d6]" />
+            <span
+              className="
+                absolute
+                left-0
+                top-1/2
+                h-8
+                -translate-y-1/2
+                border-l
+                border-[#d6d6d6]
+              "
+            />
 
             <div className="mb-2 text-[#e52d72]">
               <svg
@@ -333,55 +386,69 @@ export default function HeroSlider() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                aria-hidden="true"
               >
-                <rect
-                  x="4"
-                  y="6"
-                  width="24"
-                  height="14"
-                  rx="1"
-                />
-
+                <rect x="4" y="6" width="24" height="14" rx="1" />
                 <path d="M4 11h24" />
-
-                <circle
-                  cx="12"
-                  cy="13.5"
-                  r="2"
-                />
-
+                <circle cx="12" cy="13.5" r="2" />
                 <path d="M8 25h16" />
                 <path d="M10 22v6" />
                 <path d="M22 22v6" />
               </svg>
             </div>
 
-            <p className="text-[13px] font-bold text-[#303030] sm:text-[15px]">
+            <p
+              className="
+                text-[11px]
+                font-bold
+                text-[#303030]
+
+                sm:text-[14px]
+              "
+            >
               CASH ON DELIVERY
             </p>
 
-            <p className="mt-0.5 text-[11px] text-[#444] sm:text-[12px]">
+            <p
+              className="
+                mt-0.5
+                text-[10px]
+                text-[#444]
+
+                sm:text-[12px]
+              "
+            >
               On all orders
             </p>
           </div>
 
-          {/* =================================================
-              FREE DELIVERY
-          ================================================== */}
+          {/* FREE DELIVERY */}
+
           <div
             className="
               relative
               flex
-              min-h-[112px]
+              min-h-[100px]
               flex-col
               items-center
               justify-center
               px-2
               text-center
-              lg:min-h-[110px]
+
+              sm:min-h-[110px]
             "
           >
-            <span className="absolute left-0 top-1/2 h-8 -translate-y-1/2 border-l border-[#d6d6d6]" />
+            <span
+              className="
+                absolute
+                left-0
+                top-1/2
+                h-8
+                -translate-y-1/2
+                border-l
+                border-[#d6d6d6]
+              "
+            />
 
             <div className="mb-2 text-[#e52d72]">
               <svg
@@ -391,31 +458,37 @@ export default function HeroSlider() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                aria-hidden="true"
               >
                 <path d="M3 7h20v17H3z" />
                 <path d="M23 13h6l4 5v6h-10" />
-
-                <circle
-                  cx="10"
-                  cy="26"
-                  r="3"
-                />
-
-                <circle
-                  cx="28"
-                  cy="26"
-                  r="3"
-                />
-
+                <circle cx="10" cy="26" r="3" />
+                <circle cx="28" cy="26" r="3" />
                 <path d="M29 13v5h5" />
               </svg>
             </div>
 
-            <p className="text-[13px] font-bold text-[#303030] sm:text-[15px]">
+            <p
+              className="
+                text-[11px]
+                font-bold
+                text-[#303030]
+
+                sm:text-[14px]
+              "
+            >
               FREE DELIVERY
             </p>
 
-            <p className="mt-0.5 text-[11px] text-[#444] sm:text-[12px]">
+            <p
+              className="
+                mt-0.5
+                text-[10px]
+                text-[#444]
+
+                sm:text-[12px]
+              "
+            >
               On orders above ₹699
             </p>
           </div>
