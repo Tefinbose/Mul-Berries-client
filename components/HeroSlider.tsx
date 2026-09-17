@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Package,
+  Banknote,
+  Truck,
+} from "lucide-react";
 
 const slides = [
   {
     id: 1,
-    image:
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&w=2000&q=90",
+    image: "/products/upgraded2.png",
     eyebrow: "NEW COLLECTION",
     title: "Elegance, Woven\nInto Every Moment",
     description:
@@ -17,8 +21,7 @@ const slides = [
   },
   {
     id: 2,
-    image:
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&w=2000&q=90",
+    image: "/products/upgraded1.png",
     eyebrow: "THE FESTIVE EDIT",
     title: "Celebrate In\nSomething Beautiful",
     description:
@@ -27,8 +30,7 @@ const slides = [
   },
   {
     id: 3,
-    image:
-      "https://images.unsplash.com/photo-1605763240000-7e93b172d754?auto=format&w=2000&q=90",
+    image: "/products/upgraded3.png",
     eyebrow: "TIMELESS STYLE",
     title: "Tradition Meets\nModern Elegance",
     description:
@@ -52,9 +54,9 @@ export default function HeroSlider() {
 
   return (
     <section className="w-full bg-white">
-      {/* =========================
+      {/* =====================================================
           HERO
-      ========================== */}
+      ===================================================== */}
       <div className="relative w-full overflow-hidden bg-[#5b0d1c]">
         <div
           key={slide.id}
@@ -64,89 +66,166 @@ export default function HeroSlider() {
             w-full
             overflow-hidden
 
-            sm:h-[560px]
+            sm:h-[580px]
 
-            md:h-[600px]
+            md:h-[620px]
 
             lg:h-[calc(100svh-162px)]
             lg:min-h-[600px]
 
-            xl:h-[680px]
+            xl:h-[720px]
           "
         >
-          {/* HERO IMAGE */}
+          {/* =================================================
+              1. BLURRED BACKGROUND
+              
+              Mobile and desktop background layer
+          ================================================= */}
+          <div className="absolute inset-0 overflow-hidden">
+            <img
+              src={slide.image}
+              alt=""
+              aria-hidden="true"
+              className="
+                absolute
+                inset-0
+                h-full
+                w-full
+                scale-110
+                object-cover
+                object-center
+                blur-[25px]
+              "
+            />
 
-          <img
-            key={slide.image}
-            src={slide.image}
-            alt={slide.title.replace("\n", " ")}
+            <div className="absolute inset-0 bg-[#5b0d1c]/40" />
+          </div>
+
+          {/* =================================================
+              2. SHARP IMAGE
+
+              MOBILE:
+              Full screen background image
+
+              DESKTOP:
+              Image occupies right side
+          ================================================= */}
+          <div
             className="
               absolute
               inset-0
-              h-full
+              z-[5]
               w-full
-              object-cover
-              object-center
+
+              lg:inset-y-0
+              lg:left-auto
+              lg:right-0
+              lg:w-[67%]
+
+              xl:w-[68%]
             "
-          />
+          >
+            <img
+              key={slide.image}
+              src={slide.image}
+              alt={slide.title.replace("\n", " ")}
+              className="
+                absolute
+                inset-0
+                h-full
+                w-full
+                object-cover
+                object-center
 
-          {/* LEFT DARK GRADIENT */}
+                lg:object-[65%_center]
+              "
+            />
+          </div>
 
+          {/* =================================================
+              3. HERO TEXT GRADIENT
+
+              MOBILE:
+              Gradient comes from bottom so the image
+              remains visible while text is readable.
+
+              DESKTOP:
+              Original left-to-right burgundy gradient.
+          ================================================= */}
           <div
             className="
               pointer-events-none
               absolute
               inset-0
-              bg-gradient-to-r
-              from-black/70
-              via-black/35
+              z-10
+              w-full
+
+              bg-gradient-to-t
+              from-[#250008]
+              via-[#3c0712]/55
               to-transparent
+
+              lg:inset-y-0
+              lg:left-0
+              lg:right-auto
+              lg:w-[76%]
+
+              lg:bg-gradient-to-r
+              lg:from-[#250008]
+              lg:via-[#3c0712]/95
+              lg:via-[38%]
+              lg:via-[#4d0a18]/75
+              lg:to-transparent
             "
           />
 
-          {/* BOTTOM SOFT GRADIENT */}
-
+          {/* =================================================
+              4. EXTRA BLEND
+          ================================================= */}
           <div
             className="
               pointer-events-none
               absolute
-              inset-x-0
-              bottom-0
-              h-32
+              inset-0
+              z-10
+
               bg-gradient-to-t
-              from-black/20
-              to-transparent
+              from-black/25
+              via-transparent
+              to-black/10
             "
           />
 
-          {/* =========================
-              HERO CONTENT
-          ========================== */}
-
-          <div className="absolute inset-0 flex items-center">
+          {/* =================================================
+              5. HERO CONTENT
+          ================================================= */}
+          <div className="absolute inset-0 z-20 flex items-center">
             <div className="site-container w-full">
               <div
                 className="
-                  max-w-[420px]
+                  max-w-[430px]
                   text-white
 
                   sm:max-w-[500px]
 
-                  lg:max-w-[540px]
+                  md:max-w-[540px]
+
+                  lg:max-w-[590px]
+
+                  xl:max-w-[620px]
                 "
               >
                 {/* EYEBROW */}
-
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="h-px w-8 bg-white sm:w-10" />
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="h-px w-9 bg-white/90 sm:w-12" />
 
                   <p
                     className="
                       text-[9px]
                       font-semibold
                       uppercase
-                      tracking-[0.3em]
-                      text-white/85
+                      tracking-[0.32em]
+                      text-white/90
 
                       sm:text-[10px]
 
@@ -158,39 +237,36 @@ export default function HeroSlider() {
                 </div>
 
                 {/* TITLE */}
-
                 <h1
                   className="
                     whitespace-pre-line
-                    text-4xl
+                    text-[42px]
                     font-semibold
-                    leading-[1.04]
-                    tracking-[-0.035em]
+                    leading-[1.02]
+                    tracking-[-0.04em]
 
-                    sm:text-[46px]
+                    sm:text-[50px]
 
-                    md:text-[54px]
+                    md:text-[58px]
 
-                    lg:text-[62px]
+                    lg:text-[64px]
 
-                    xl:text-[68px]
+                    xl:text-[70px]
                   "
                 >
                   {slide.title}
                 </h1>
 
                 {/* DESCRIPTION */}
-
                 <p
                   className="
-                    mt-5
-                    max-w-[420px]
-                    text-xs
-                    leading-5
+                    mt-6
+                    max-w-[480px]
+                    text-[12px]
+                    leading-6
                     text-white/80
 
-                    sm:text-sm
-                    sm:leading-6
+                    sm:text-[13px]
 
                     lg:text-[15px]
                     lg:leading-7
@@ -200,36 +276,37 @@ export default function HeroSlider() {
                 </p>
 
                 {/* BUTTON */}
-
-                <div className="mt-7">
+                <div className="mt-8">
                   <Link
                     href="/products"
                     className="
                       group
                       inline-flex
                       items-center
-                      gap-3
+                      gap-4
                       rounded-full
                       bg-white
-                      px-6
-                      py-3.5
-                      text-xs
+                      px-7
+                      py-4
+                      text-[12px]
                       font-semibold
-                      text-neutral-950
+                      text-[#171717]
+                      shadow-lg
                       transition-all
                       duration-300
 
-                      hover:gap-4
                       hover:bg-[#971444]
                       hover:text-white
+                      hover:shadow-xl
 
-                      sm:text-sm
+                      sm:px-8
+                      sm:text-[13px]
                     "
                   >
                     {slide.button}
 
                     <ArrowRight
-                      size={16}
+                      size={17}
                       strokeWidth={1.8}
                       className="
                         transition-transform
@@ -243,17 +320,16 @@ export default function HeroSlider() {
             </div>
           </div>
 
-          {/* =========================
+          {/* =================================================
               SLIDER DOTS
-          ========================== */}
-
+          ================================================= */}
           <div
             className="
               absolute
-              bottom-5
+              bottom-6
               left-0
               right-0
-              z-20
+              z-30
               flex
               items-center
               justify-center
@@ -266,7 +342,9 @@ export default function HeroSlider() {
                 type="button"
                 onClick={() => setCurrent(index)}
                 aria-label={`Go to slide ${index + 1}`}
-                aria-current={current === index ? "true" : undefined}
+                aria-current={
+                  current === index ? "true" : undefined
+                }
                 className={`
                   h-[7px]
                   rounded-full
@@ -275,8 +353,8 @@ export default function HeroSlider() {
 
                   ${
                     current === index
-                      ? "w-12 bg-white"
-                      : "w-[7px] bg-white/65 hover:bg-white"
+                      ? "w-11 bg-white"
+                      : "w-[7px] bg-white/50 hover:bg-white"
                   }
                 `}
               />
@@ -285,14 +363,13 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      {/* =========================
-          BENEFITS BAR
-      ========================== */}
-
+      {/* =====================================================
+          SERVICE FEATURES
+      ===================================================== */}
       <div className="border-b border-[#e5e5e5] bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-3">
-          {/* FREE RETURNS */}
 
+          {/* FREE RETURNS */}
           <div
             className="
               flex
@@ -307,51 +384,23 @@ export default function HeroSlider() {
             "
           >
             <div className="mb-2 text-[#e52d72]">
-              <svg
-                width="27"
-                height="27"
-                viewBox="0 0 32 32"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path d="M5 10.5 16 4l11 6.5v12L16 29 5 22.5v-12Z" />
-                <path d="m5 10.5 11 6 11-6" />
-                <path d="M16 16.5V29" />
-                <path d="M11 8l11 6" />
-                <path d="M22 19h6" />
-                <path d="M25 16l3 3-3 3" />
-              </svg>
+              <Package
+                size={24}
+                strokeWidth={1.5}
+                className="sm:h-7 sm:w-7"
+              />
             </div>
 
-            <p
-              className="
-                text-[11px]
-                font-bold
-                text-[#303030]
-
-                sm:text-[14px]
-              "
-            >
+            <p className="text-[11px] font-bold text-[#303030] sm:text-[14px]">
               FREE RETURNS
             </p>
 
-            <p
-              className="
-                mt-0.5
-                text-[10px]
-                text-[#444]
-
-                sm:text-[12px]
-              "
-            >
+            <p className="mt-0.5 text-[10px] text-[#444] sm:text-[12px]">
               Within 7 days
             </p>
           </div>
 
           {/* CASH ON DELIVERY */}
-
           <div
             className="
               relative
@@ -371,59 +420,31 @@ export default function HeroSlider() {
                 absolute
                 left-0
                 top-1/2
-                h-8
+                h-10
+                w-px
                 -translate-y-1/2
-                border-l
-                border-[#d6d6d6]
+                bg-[#e5e5e5]
               "
             />
 
             <div className="mb-2 text-[#e52d72]">
-              <svg
-                width="29"
-                height="29"
-                viewBox="0 0 32 32"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <rect x="4" y="6" width="24" height="14" rx="1" />
-                <path d="M4 11h24" />
-                <circle cx="12" cy="13.5" r="2" />
-                <path d="M8 25h16" />
-                <path d="M10 22v6" />
-                <path d="M22 22v6" />
-              </svg>
+              <Banknote
+                size={24}
+                strokeWidth={1.5}
+                className="sm:h-7 sm:w-7"
+              />
             </div>
 
-            <p
-              className="
-                text-[11px]
-                font-bold
-                text-[#303030]
-
-                sm:text-[14px]
-              "
-            >
+            <p className="text-[11px] font-bold text-[#303030] sm:text-[14px]">
               CASH ON DELIVERY
             </p>
 
-            <p
-              className="
-                mt-0.5
-                text-[10px]
-                text-[#444]
-
-                sm:text-[12px]
-              "
-            >
+            <p className="mt-0.5 text-[10px] text-[#444] sm:text-[12px]">
               On all orders
             </p>
           </div>
 
           {/* FREE DELIVERY */}
-
           <div
             className="
               relative
@@ -443,55 +464,30 @@ export default function HeroSlider() {
                 absolute
                 left-0
                 top-1/2
-                h-8
+                h-10
+                w-px
                 -translate-y-1/2
-                border-l
-                border-[#d6d6d6]
+                bg-[#e5e5e5]
               "
             />
 
             <div className="mb-2 text-[#e52d72]">
-              <svg
-                width="31"
-                height="29"
-                viewBox="0 0 36 32"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path d="M3 7h20v17H3z" />
-                <path d="M23 13h6l4 5v6h-10" />
-                <circle cx="10" cy="26" r="3" />
-                <circle cx="28" cy="26" r="3" />
-                <path d="M29 13v5h5" />
-              </svg>
+              <Truck
+                size={24}
+                strokeWidth={1.5}
+                className="sm:h-7 sm:w-7"
+              />
             </div>
 
-            <p
-              className="
-                text-[11px]
-                font-bold
-                text-[#303030]
-
-                sm:text-[14px]
-              "
-            >
+            <p className="text-[11px] font-bold text-[#303030] sm:text-[14px]">
               FREE DELIVERY
             </p>
 
-            <p
-              className="
-                mt-0.5
-                text-[10px]
-                text-[#444]
-
-                sm:text-[12px]
-              "
-            >
+            <p className="mt-0.5 text-[10px] text-[#444] sm:text-[12px]">
               On orders above ₹699
             </p>
           </div>
+
         </div>
       </div>
     </section>
