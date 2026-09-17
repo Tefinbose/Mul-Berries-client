@@ -20,7 +20,7 @@ export default function BestSellers() {
           w-full
           overflow-hidden
           rounded-[20px]
-          bg-[#fbf0f5]
+          bg-[#f5f3ee]
           px-3
           py-6
 

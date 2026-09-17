@@ -5,10 +5,12 @@ import type { Product } from "@/lib/products";
 
 type ProductCardProps = {
   product: Product;
+  tallImage?: boolean;
 };
 
 export default function ProductCard({
   product,
+  tallImage = false,
 }: ProductCardProps) {
   const discount =
     product.comparePrice &&
@@ -28,7 +30,11 @@ export default function ProductCard({
   return (
     <article className="group">
       {/* Product Image */}
-      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-neutral-100">
+      <div
+        className={`relative overflow-hidden rounded-xl bg-neutral-100 ${
+          tallImage ? "aspect-[3/4]" : "aspect-[4/5]"
+        }`}
+      >
         <Link href={`/products/${product.slug}`}>
           <Image
             src={product.image}

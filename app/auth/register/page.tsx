@@ -10,10 +10,15 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { registerApi } from "@/services/authApi";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -32,17 +37,61 @@ export default function RegisterPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check password
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match.");
       return;
     }
 
-    console.log("Registration details:", formData);
+    // Check password length
+    if (formData.password.length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
 
-    alert("Registration submitted!");
+    try {
+      setLoading(true);
+
+      // Combine first name and last name
+      const fullName =
+        `${formData.firstName} ${formData.lastName}`.trim();
+
+      // Call backend API
+      const response = await registerApi({
+        name: fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Store JWT token
+      localStorage.setItem("token", response.token);
+
+      // Optional: store user information
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.user)
+      );
+
+      console.log("Registration successful:", response);
+
+      alert("Account created successfully!");
+
+      // Redirect to homepage
+      router.push("/");
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -211,7 +260,9 @@ export default function RegisterPage() {
 
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() =>
+                      setShowPassword(!showPassword)
+                    }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900"
                   >
                     {showPassword ? (
@@ -241,7 +292,11 @@ export default function RegisterPage() {
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={
+                      showConfirmPassword
+                        ? "text"
+                        : "password"
+                    }
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Confirm your password"
@@ -252,7 +307,9 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
+                      setShowConfirmPassword(
+                        !showConfirmPassword
+                      )
                     }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900"
                   >
@@ -268,10 +325,12 @@ export default function RegisterPage() {
               {/* Register */}
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-sm font-medium text-white transition hover:bg-stone-700"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create Account
-                <ArrowRight size={17} />
+                {loading ? "Creating account..." : "Create Account"}
+
+                {!loading && <ArrowRight size={17} />}
               </button>
             </form>
 

@@ -34,10 +34,11 @@ const benefits = [
 
 export default function WhyPeopleChooseUs() {
   return (
-    <section className="w-full px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+    <section className="w-full py-14 lg:py-20">
+      <div className="site-container">
 
       {/* Main Card */}
-      <div className="w-full overflow-hidden rounded-[28px] border border-neutral-200/80 bg-[#f7f7f2] shadow-sm">
+      <div className="w-full overflow-hidden rounded-[28px] border border-neutral-200/80 bg-[#f5f3ee] shadow-sm">
 
         <div className="grid w-full lg:grid-cols-[0.9fr_1.1fr]">
 
@@ -136,6 +137,7 @@ export default function WhyPeopleChooseUs() {
           </div>
 
         </div>
+      </div>
       </div>
 
     </section>

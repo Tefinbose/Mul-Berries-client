@@ -74,56 +74,45 @@ export default function Home() {
       relative
       w-full
       overflow-hidden
-      bg-gradient-to-br
-      from-[#fdf3f7]
-      via-[#f8edf2]
-      to-[#f5f3ee]
-      px-6
-      py-20
+      border-y
+      border-[#e5e1da]
+      bg-[#f5f3ee]
+      px-5
+      py-16
       text-center
-      sm:px-10
-      sm:py-24
-      lg:px-16
-      lg:py-28
-      xl:px-24
+      sm:px-8
+      sm:py-20
+      lg:px-12
+      lg:py-24
     "
   >
-    {/* Decorative background */}
-    <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-[#c73572]/10 sm:h-96 sm:w-96" />
-
-    <div className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-[#c73572]/5 blur-3xl" />
-
-    <div className="pointer-events-none absolute right-[20%] top-[25%] h-2 w-2 rounded-full bg-[#c73572]/30" />
-
-    <div className="pointer-events-none absolute bottom-[20%] left-[30%] h-1.5 w-1.5 rounded-full bg-[#c73572]/20" />
-
     {/* Content */}
-    <div className="relative z-10 flex w-full flex-col items-center">
+    <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center">
 
       {/* Eyebrow */}
       <div className="flex items-center justify-center gap-3">
-        <span className="h-px w-8 bg-[#c73572]" />
+        <span className="h-px w-10 bg-[#c73572]" />
 
-        <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#c73572]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[#c73572]">
           The Mulberries Edit
         </p>
 
-        <span className="h-px w-8 bg-[#c73572]" />
+        <span className="h-px w-10 bg-[#c73572]" />
       </div>
 
       {/* Heading */}
       <h2
         className="
-          mt-6
-          max-w-4xl
-          text-5xl
+          mt-5
+          max-w-3xl
+          text-4xl
           font-semibold
-          leading-[0.95]
-          tracking-[-0.045em]
+          leading-none
+          tracking-[-0.035em]
           text-[#171717]
-          sm:text-6xl
-          lg:text-7xl
-          xl:text-[88px]
+          sm:text-5xl
+          lg:text-6xl
+          xl:text-7xl
         "
       >
         Discover something
@@ -136,12 +125,12 @@ export default function Home() {
       {/* Description */}
       <p
         className="
-          mt-7
-          max-w-xl
+          mt-6
+          max-w-2xl
           text-sm
           leading-6
           text-neutral-600
-          sm:text-base
+          sm:text-[15px]
           sm:leading-7
         "
       >
@@ -154,7 +143,7 @@ export default function Home() {
         href="/products"
         className="
           group
-          mt-9
+          mt-8
           inline-flex
           items-center
           gap-4
@@ -169,7 +158,7 @@ export default function Home() {
           duration-300
           hover:bg-[#c73572]
           sm:px-7
-          sm:py-4
+          sm:py-3.5
         "
       >
         Start Shopping
@@ -195,16 +184,16 @@ export default function Home() {
       {/* Bottom brand line */}
       <div
         className="
-          mt-16
+          mt-14
           flex
           w-full
           items-center
           justify-between
           border-t
-          border-[#c73572]/10
+          border-[#e5e1da]
           pt-5
           text-center
-          sm:mt-20
+          sm:mt-16
         "
       >
         <p className="text-[9px] font-medium uppercase tracking-[0.28em] text-neutral-400">

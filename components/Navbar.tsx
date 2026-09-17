@@ -10,12 +10,12 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 const navLinks = [
   { name: "Home", href: "/" },
-  { name: "Categories", href: "/categories" },
-  { name: "Products", href: "/products" },
+  { name: "Shop", href: "/products" },
   { name: "About", href: "/about" },
 ];
 
@@ -39,39 +39,18 @@ export default function Navbar() {
     <>
       {/* TOP BAR */}
       <div className="bg-[#171717] text-white">
-        <div className="mx-auto flex min-h-10 w-full items-center justify-between px-4 sm:px-6 lg:px-10">
-          <p className="text-[11px] font-medium tracking-[0.18em] text-white/70">
-            PREMIUM COLLECTIONS • THOUGHTFULLY CURATED
-          </p>
-
-          <div className="hidden items-center gap-5 text-[11px] text-white/70 sm:flex">
-            <a
-              href="#"
-              className="transition hover:text-white"
-            >
-              Facebook
-            </a>
-
-            <a
-              href="#"
-              className="transition hover:text-white"
-            >
-              Instagram
-            </a>
-
-            <a
-              href="#"
-              className="transition hover:text-white"
-            >
-              YouTube
-            </a>
+        <div className="mx-auto flex min-h-10 w-full items-center overflow-hidden px-4 sm:px-6 lg:px-10">
+          <div className="w-full overflow-hidden">
+            <p className="animate-announcement-marquee w-max whitespace-nowrap text-[11px] font-medium tracking-[0.18em] text-white/70">
+              PREMIUM COLLECTIONS • THOUGHTFULLY CURATED
+            </p>
           </div>
         </div>
       </div>
 
       {/* MAIN NAVBAR */}
       <header className="sticky top-0 z-50 w-full border-b border-neutral-200/80 bg-white/95 backdrop-blur-md">
-        <div className="relative flex h-[68px] w-full items-center justify-between px-4 sm:px-6 lg:h-[74px] lg:px-8">
+        <div className="site-container relative flex h-[68px] items-center justify-between lg:h-[74px]">
           
           {/* MOBILE MENU BUTTON */}
           <button
@@ -104,6 +83,58 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
+
+            <div className="group relative">
+              <Link
+                href="/categories"
+                aria-haspopup="true"
+                className="flex items-center gap-1.5 text-[15px] font-medium text-[#171717] transition-colors duration-200 hover:text-[#c73572] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c73572]/40 focus-visible:ring-offset-4"
+              >
+                Collections
+                <ChevronDown
+                  size={15}
+                  strokeWidth={1.8}
+                  className="transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+                />
+              </Link>
+
+              <div className="invisible absolute left-1/2 top-full z-50 w-[min(92vw,680px)] -translate-x-1/2 translate-y-2 pt-4 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <div className="grid grid-cols-[0.9fr_1.1fr] overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_18px_45px_rgba(23,23,23,0.14)]">
+                  <Link
+                    href="/products"
+                    className="flex min-h-44 flex-col justify-between rounded-xl bg-[#f5f3ee] p-5 transition-colors hover:bg-[#fbf0f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c73572]/40"
+                  >
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c73572]">
+                        New Collection
+                      </p>
+                      <p className="mt-3 max-w-[190px] text-xl font-semibold leading-tight text-neutral-900">
+                        Find your next signature look.
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-neutral-600">
+                      Shop the edit <ChevronRight className="ml-1 inline" size={14} />
+                    </span>
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 px-5 py-4">
+                    <p className="col-span-2 mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                      Shop by category
+                    </p>
+                    {categories.map((category) => (
+                      <Link
+                        key={category.href}
+                        href={category.href}
+                        className="flex items-center justify-between border-b border-neutral-100 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-[#c73572]/30 hover:text-[#c73572] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c73572]/40"
+                      >
+                        {category.name}
+                        <ChevronRight size={14} className="text-neutral-300" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </nav>
 
           {/* LOGO */}
@@ -173,20 +204,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* DESKTOP CATEGORY NAVIGATION */}
-        <div className="hidden w-full border-t border-neutral-100 lg:block">
-          <div className="flex w-full items-center justify-center gap-8 px-8 py-3">
-            {categories.map((category) => (
-              <Link
-                key={category.href}
-                href={category.href}
-                className="text-[11px] font-medium uppercase tracking-[0.12em] text-neutral-500 transition-colors duration-200 hover:text-[#c73572]"
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        </div>
       </header>
 
       {/* MOBILE MENU */}
@@ -214,8 +231,17 @@ export default function Navbar() {
             {/* COLLECTIONS */}
             <div className="pt-5">
               <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.25em] text-neutral-400">
-                Collections
+                New Collection
               </p>
+
+              <Link
+                href="/products"
+                onClick={closeMobileMenu}
+                className="mb-2 flex items-center justify-between rounded-xl bg-[#f5f3ee] px-3 py-3 text-xs font-semibold text-neutral-800 transition hover:bg-[#fbf0f5] hover:text-[#c73572]"
+              >
+                Shop the latest edit
+                <ChevronRight size={15} />
+              </Link>
 
               <div className="grid grid-cols-2 gap-2">
                 {categories.map((category) => (

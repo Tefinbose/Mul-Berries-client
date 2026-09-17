@@ -14,7 +14,7 @@ export default function GlobalError({
 }: GlobalErrorProps) {
   return (
     <html lang="en">
-      <body className="bg-white">
+      <body className="bg-[#f5f3ee]">
         <main className="flex min-h-screen items-center justify-center px-6">
           <div className="w-full max-w-lg text-center">
             {/* Logo */}

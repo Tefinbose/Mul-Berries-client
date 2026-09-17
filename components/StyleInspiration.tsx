@@ -24,7 +24,8 @@ const styles = [
 
 export default function StyleInspiration() {
   return (
-    <section className="w-full px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <section className="w-full py-12 sm:py-14 lg:py-20">
+      <div className="site-container">
       {/* Heading */}
       <div className="w-full">
         <div className="max-w-2xl">
@@ -113,6 +114,7 @@ export default function StyleInspiration() {
             </div>
           </Link>
         ))}
+      </div>
       </div>
     </section>
   );

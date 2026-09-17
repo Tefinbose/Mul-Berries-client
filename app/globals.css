@@ -203,6 +203,37 @@
   }
 }
 
+@layer components {
+  .site-container {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .site-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-container {
+      padding-inline: 2rem;
+    }
+  }
+}
+
+@layer utilities {
+  /* Keep every route on the same page canvas while preserving inner surfaces. */
+  main.min-h-screen,
+  main.min-h-full,
+  div.min-h-screen,
+  div.min-h-full {
+    background-color: var(--background) !important;
+  }
+}
+
 
 /* =================================
    MULBERRIES GLOBAL UTILITIES
@@ -294,6 +325,24 @@
     forwards;
 }
 
+@keyframes announcement-marquee {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-announcement-marquee {
+  animation: announcement-marquee 12s linear infinite;
+}
+
+.animate-announcement-marquee:hover {
+  animation-play-state: paused;
+}
+
 
 /* =================================
    ACCESSIBILITY
@@ -306,7 +355,8 @@
 
   .hero-slide-animation,
   .hero-content-animation,
-  .animate-featured-fade-up {
+  .animate-featured-fade-up,
+  .animate-announcement-marquee {
     animation: none;
   }
 }
