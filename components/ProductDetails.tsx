@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Check,
   Heart,
@@ -17,6 +18,7 @@ import type { Product } from "@/lib/products";
 import MobileColorSelector from "@/components/MobileColorSelector";
 import MobileSizeSelector from "@/components/MobileSizeSelector";
 import MobileProductActions from "@/components/MobileProductActions";
+import { useCart } from "@/context/CartContext";
 
 interface ProductDetailsProps {
   product: Product;
@@ -49,9 +51,30 @@ const colors = [
 export default function ProductDetails({
   product,
 }: ProductDetailsProps) {
+  const router = useRouter();
+  const { addToCart } = useCart();
   const extendedProduct = product as ExtendedProduct;
 
   const variants = extendedProduct.variants ?? [];
+
+  const availableColors =
+    variants.length > 0
+      ? Array.from(
+          new Map(
+            variants.map((variant) => [
+              variant.color,
+              {
+                name: variant.color,
+                value:
+                  colors.find(
+                    (color) =>
+                      color.name === variant.color
+                  )?.value ?? "#d4d4d4",
+              },
+            ])
+          ).values()
+        )
+      : colors;
 
   const productStock = Number(
     extendedProduct.stock ?? 0
@@ -72,7 +95,11 @@ export default function ProductDetails({
    */
 
   const [selectedColor, setSelectedColor] =
-    useState("Emerald Green");
+    useState(
+      variants[0]?.color ??
+        availableColors[0]?.name ??
+        ""
+    );
 
   const [selectedSize, setSelectedSize] =
     useState(
@@ -93,8 +120,12 @@ export default function ProductDetails({
 
   const selectedVariant = variants.find(
     (variant) =>
-      variant.size === selectedSize
-  );
+      variant.size === selectedSize &&
+      variant.color === selectedColor
+  ) ??
+    variants.find(
+      (variant) => variant.size === selectedSize
+    );
 
   const finalPrice = Number(
     selectedVariant?.price ??
@@ -132,8 +163,12 @@ export default function ProductDetails({
 
   const sizes =
     variants.length > 0
-      ? variants.map(
-          (variant) => variant.size
+      ? Array.from(
+          new Set(
+            variants.map(
+              (variant) => variant.size
+            )
+          )
         )
       : ["Free Size"];
 
@@ -217,17 +252,26 @@ export default function ProductDetails({
     setQuantity(1);
   };
 
-  /*
-   * ---------------------------------------------------------
-   * PRODUCT ID
-   * ---------------------------------------------------------
-   */
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
 
-  const getProductId = () => {
-    return (
-      extendedProduct._id ??
-      product.slug
+    const matchingVariant = variants.find(
+      (variant) =>
+        variant.color === color &&
+        variant.size === selectedSize
     );
+
+    if (!matchingVariant) {
+      const firstVariantWithColor = variants.find(
+        (variant) => variant.color === color
+      );
+
+      if (firstVariantWithColor) {
+        setSelectedSize(firstVariantWithColor.size);
+      }
+    }
+
+    setQuantity(1);
   };
 
   /*
@@ -241,16 +285,11 @@ export default function ProductDetails({
       return;
     }
 
-    console.log("ADD TO CART:", {
-      productId: getProductId(),
-      productName: product.name,
-      quantity,
-      color: selectedColor,
-      size: selectedSize,
-      price: finalPrice,
-      variantId:
-        selectedVariant?.id ?? null,
-    });
+    if (!selectedVariant) {
+      return;
+    }
+
+    addToCart(product, selectedVariant, quantity);
   };
 
   /*
@@ -264,16 +303,12 @@ export default function ProductDetails({
       return;
     }
 
-    console.log("BUY NOW:", {
-      productId: getProductId(),
-      productName: product.name,
-      quantity,
-      color: selectedColor,
-      size: selectedSize,
-      price: finalPrice,
-      variantId:
-        selectedVariant?.id ?? null,
-    });
+    if (!selectedVariant) {
+      return;
+    }
+
+    addToCart(product, selectedVariant, quantity);
+    router.push("/cart");
   };
 
   /*
@@ -433,9 +468,9 @@ export default function ProductDetails({
 
       <div className="mt-5 md:hidden">
         <MobileColorSelector
-          colors={colors}
+          colors={availableColors}
           selectedColor={selectedColor}
-          onChange={setSelectedColor}
+          onChange={handleColorChange}
         />
       </div>
 
@@ -457,7 +492,7 @@ export default function ProductDetails({
 
         <div className="flex flex-wrap gap-2.5">
 
-          {colors.map(
+          {availableColors.map(
             (color, index) => {
               const selected =
                 selectedColor ===
@@ -468,7 +503,7 @@ export default function ProductDetails({
                   key={`${color.name}-${color.value}-${index}`}
                   type="button"
                   onClick={() =>
-                    setSelectedColor(
+                    handleColorChange(
                       color.name
                     )
                   }
