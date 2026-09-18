@@ -16,6 +16,7 @@ import type { Product } from "@/lib/products";
 
 import MobileColorSelector from "@/components/MobileColorSelector";
 import MobileSizeSelector from "@/components/MobileSizeSelector";
+import MobileProductActions from "@/components/MobileProductActions";
 
 interface ProductDetailsProps {
   product: Product;
@@ -806,74 +807,12 @@ export default function ProductDetails({
           MOBILE PURCHASE BUTTONS
       ===================================================== */}
 
-      <section className="mt-4 grid grid-cols-[1fr_1.35fr] gap-2 md:hidden">
-
-        <button
-          type="button"
-          disabled={isOutOfStock}
-          onClick={
-            handleAddToCart
-          }
-          className="
-            flex
-            h-12
-            items-center
-            justify-center
-            gap-2
-            rounded-lg
-            border
-            border-neutral-900
-            bg-white
-            px-3
-            text-xs
-            font-bold
-            text-neutral-900
-            transition
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-40
-          "
-        >
-          <ShoppingBagIcon />
-
-          <span>
-            Add to Bag
-          </span>
-        </button>
-
-        <button
-          type="button"
-          disabled={isOutOfStock}
-          onClick={
-            handleBuyNow
-          }
-          className="
-            flex
-            h-12
-            items-center
-            justify-center
-            gap-2
-            rounded-lg
-            bg-[#c73572]
-            px-3
-            text-xs
-            font-bold
-            text-white
-            shadow-sm
-            transition
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-40
-          "
-        >
-          <Zap size={17} />
-
-          <span>
-            Buy Now
-          </span>
-        </button>
-
-      </section>
+      <MobileProductActions
+        price={finalPrice}
+        disabled={isOutOfStock}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+      />
 
       {/* =====================================================
           DESKTOP PURCHASE
