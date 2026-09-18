@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useContext,
   useEffect,
   useMemo,
@@ -69,16 +70,19 @@ export function CartProvider({
         localStorage.getItem(CART_STORAGE_KEY);
 
       if (savedCart) {
-        const parsedCart: CartItem[] =
+        const parsedCart: unknown =
           JSON.parse(savedCart);
 
-        setItems(parsedCart);
+        if (Array.isArray(parsedCart)) {
+          startTransition(() => {
+            setItems(parsedCart as CartItem[]);
+          });
+        } else {
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
       }
-    } catch (error) {
-      console.error(
-        "Failed to load cart:",
-        error
-      );
+    } catch {
+      localStorage.removeItem(CART_STORAGE_KEY);
     } finally {
       setIsLoaded(true);
     }

@@ -34,13 +34,34 @@ export async function apiRequest<T>(
     },
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data: unknown = null;
 
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
+  if (responseText.trim()) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        "The server returned an invalid JSON response."
+      );
+    }
   }
 
-  return data;
+  if (!response.ok) {
+    const message =
+      typeof data === "object" &&
+      data !== null &&
+      "message" in data &&
+      typeof data.message === "string"
+        ? data.message
+        : "Something went wrong";
+
+    throw new Error(
+      message
+    );
+  }
+
+  return data as T;
 }
 
 export { API_URL };

@@ -467,7 +467,7 @@ export default function ProductDetails({
           MOBILE COLOR
       ===================================================== */}
 
-      <div className="mt-5 md:hidden">
+      <div className="mt-5 lg:hidden">
         <MobileColorSelector
           colors={availableColors}
           selectedColor={selectedColor}
@@ -479,7 +479,7 @@ export default function ProductDetails({
           DESKTOP COLOR
       ===================================================== */}
 
-      <section className="mt-6 hidden md:block">
+      <section className="mt-6 hidden lg:block">
         <div className="mb-3 flex items-center justify-between">
 
           <h2 className="text-sm font-semibold text-neutral-900">
@@ -558,7 +558,7 @@ export default function ProductDetails({
           MOBILE SIZE
       ===================================================== */}
 
-      <div className="mt-5 md:hidden">
+      <div className="mt-5 lg:hidden">
         <MobileSizeSelector
           sizes={sizes}
           selectedSize={selectedSize}
@@ -570,7 +570,7 @@ export default function ProductDetails({
           DESKTOP SIZE
       ===================================================== */}
 
-      <section className="mt-6 hidden md:block">
+      <section className="mt-6 hidden lg:block">
 
         <div className="mb-3 flex items-center justify-between">
 
@@ -725,7 +725,7 @@ export default function ProductDetails({
           MOBILE QUANTITY
       ===================================================== */}
 
-      <section className="mt-5 md:hidden">
+      <section className="mt-5 lg:hidden">
 
         <div className="mb-2.5 flex items-center justify-between">
 
@@ -855,7 +855,7 @@ export default function ProductDetails({
           DESKTOP PURCHASE
       ===================================================== */}
 
-      <section className="mt-5 hidden md:block">
+      <section className="mt-5 hidden lg:block">
 
         <div className="flex items-center gap-2.5">
 

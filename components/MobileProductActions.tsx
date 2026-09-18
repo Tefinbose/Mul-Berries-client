@@ -97,13 +97,13 @@ export default function MobileProductActions({
 
   return (
     <>
-      <div ref={actionsRef} className="mt-4 w-full md:hidden">
+      <div ref={actionsRef} className="mt-4 w-full lg:hidden">
         {buttons}
       </div>
 
       {showSticky
         ? createPortal(
-            <div className="fixed inset-x-0 bottom-0 z-60 border-t border-neutral-200 bg-white/95 px-3 pt-2 shadow-[0_-6px_20px_rgba(0,0,0,0.15)] backdrop-blur-md md:hidden">
+            <div className="fixed inset-x-0 bottom-0 z-60 border-t border-neutral-200 bg-white/95 px-3 pt-2 shadow-[0_-6px_20px_rgba(0,0,0,0.15)] backdrop-blur-md lg:hidden">
               <div className="mx-auto w-full max-w-3xl pb-[calc(8px+env(safe-area-inset-bottom))]">
                 {buttons}
               </div>
