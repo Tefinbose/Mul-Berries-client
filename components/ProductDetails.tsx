@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -53,6 +53,7 @@ export default function ProductDetails({
 }: ProductDetailsProps) {
   const router = useRouter();
   const { addToCart } = useCart();
+  const productDetailsRef = useRef<HTMLDivElement>(null);
   const extendedProduct = product as ExtendedProduct;
 
   const variants = extendedProduct.variants ?? [];
@@ -324,7 +325,7 @@ export default function ProductDetails({
   };
 
   return (
-    <div className="w-full">
+    <div ref={productDetailsRef} className="w-full">
 
       {/* =====================================================
           RATING
@@ -843,6 +844,7 @@ export default function ProductDetails({
       ===================================================== */}
 
       <MobileProductActions
+        boundaryRef={productDetailsRef}
         price={finalPrice}
         disabled={isOutOfStock}
         onAddToCart={handleAddToCart}

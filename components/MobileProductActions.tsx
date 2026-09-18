@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { ShoppingBag, Zap } from "lucide-react";
 
 interface MobileProductActionsProps {
+  boundaryRef: RefObject<HTMLElement | null>;
   price: number;
   disabled?: boolean;
   onAddToCart: () => void;
@@ -12,13 +18,17 @@ interface MobileProductActionsProps {
 }
 
 export default function MobileProductActions({
+  boundaryRef,
   price,
   disabled = false,
   onAddToCart,
   onBuyNow,
 }: MobileProductActionsProps) {
   const actionsRef = useRef<HTMLDivElement>(null);
-  const [showSticky, setShowSticky] = useState(false);
+  const [isProductVisible, setIsProductVisible] =
+    useState(false);
+  const [areActionsVisible, setAreActionsVisible] =
+    useState(true);
 
   const formattedPrice = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -28,22 +38,35 @@ export default function MobileProductActions({
 
   useEffect(() => {
     const actions = actionsRef.current;
+    const productDetails = boundaryRef.current;
 
-    if (!actions) {
+    if (!actions || !productDetails) {
       return;
     }
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowSticky(!entry.isIntersecting);
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.target === productDetails) {
+            setIsProductVisible(entry.isIntersecting);
+          }
+
+          if (entry.target === actions) {
+            setAreActionsVisible(entry.isIntersecting);
+          }
+        });
       },
       { threshold: 0.1 }
     );
 
+    observer.observe(productDetails);
     observer.observe(actions);
 
     return () => observer.disconnect();
-  }, []);
+  }, [boundaryRef]);
+
+  const showSticky =
+    isProductVisible && !areActionsVisible;
 
   const buttonClass =
     "flex h-12 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40";
