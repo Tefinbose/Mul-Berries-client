@@ -3,7 +3,6 @@
 import {
   type RefObject,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { createPortal } from "react-dom";
@@ -24,11 +23,8 @@ export default function MobileProductActions({
   onAddToCart,
   onBuyNow,
 }: MobileProductActionsProps) {
-  const actionsRef = useRef<HTMLDivElement>(null);
   const [isProductVisible, setIsProductVisible] =
     useState(false);
-  const [areActionsVisible, setAreActionsVisible] =
-    useState(true);
 
   const formattedPrice = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -37,36 +33,25 @@ export default function MobileProductActions({
   }).format(price);
 
   useEffect(() => {
-    const actions = actionsRef.current;
     const productDetails = boundaryRef.current;
 
-    if (!actions || !productDetails) {
+    if (!productDetails) {
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.target === productDetails) {
-            setIsProductVisible(entry.isIntersecting);
-          }
-
-          if (entry.target === actions) {
-            setAreActionsVisible(entry.isIntersecting);
-          }
+          setIsProductVisible(entry.isIntersecting);
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0 }
     );
 
     observer.observe(productDetails);
-    observer.observe(actions);
 
     return () => observer.disconnect();
   }, [boundaryRef]);
-
-  const showSticky =
-    isProductVisible && !areActionsVisible;
 
   const buttonClass =
     "flex h-12 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40";
@@ -97,14 +82,10 @@ export default function MobileProductActions({
 
   return (
     <>
-      <div ref={actionsRef} className="mt-4 w-full lg:hidden">
-        {buttons}
-      </div>
-
-      {showSticky
+      {isProductVisible
         ? createPortal(
             <div className="fixed inset-x-0 bottom-0 z-60 border-t border-neutral-200 bg-white/95 px-3 pt-2 shadow-[0_-6px_20px_rgba(0,0,0,0.15)] backdrop-blur-md lg:hidden">
-              <div className="mx-auto w-full max-w-3xl pb-[calc(8px+env(safe-area-inset-bottom))]">
+              <div className="mx-auto w-full max-w-3xl pb-[max(8px,env(safe-area-inset-bottom))]">
                 {buttons}
               </div>
             </div>,
