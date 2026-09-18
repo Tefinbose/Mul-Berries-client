@@ -1,7 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+} from "lucide-react";
 
 type ProductGalleryProps = {
   images: string[];
@@ -12,110 +17,194 @@ export default function ProductGallery({
   images,
   productName,
 }: ProductGalleryProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [zoomOpen, setZoomOpen] = useState(false);
+  const safeImages =
+    images && images.length > 0
+      ? images
+      : ["/placeholder-product.jpg"];
 
-  const currentImage = images[selectedIndex];
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const currentImage =
+    safeImages[activeIndex] ?? safeImages[0];
 
   const previousImage = () => {
-    setSelectedIndex((current) =>
-      current === 0 ? images.length - 1 : current - 1
+    setActiveIndex((current) =>
+      current === 0
+        ? safeImages.length - 1
+        : current - 1
     );
   };
 
   const nextImage = () => {
-    setSelectedIndex((current) =>
-      current === images.length - 1 ? 0 : current + 1
+    setActiveIndex((current) =>
+      current === safeImages.length - 1
+        ? 0
+        : current + 1
     );
   };
 
   return (
-    <>
-      <div>
-        {/* Main Image */}
-        <div className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-neutral-100">
-          <img
-            src={currentImage}
-            alt={productName}
-            className="h-full w-full object-cover"
-          />
+    <div className="w-full">
+      {/* =========================
+          DESKTOP GALLERY
+      ========================== */}
+      <div className="hidden lg:flex lg:gap-3">
+        {/* Thumbnails */}
+        <div className="flex w-[72px] shrink-0 flex-col gap-2">
+          {safeImages.slice(0, 5).map((image, index) => (
+            <button
+              key={`${image}-${index}`}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              aria-label={`View image ${index + 1}`}
+              className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg border bg-neutral-100 transition ${
+                activeIndex === index
+                  ? "border-[#c73572] ring-1 ring-[#c73572]"
+                  : "border-neutral-200 hover:border-neutral-400"
+              }`}
+            >
+              <Image
+                src={image}
+                alt={`${productName} image ${index + 1}`}
+                fill
+                sizes="72px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
 
-          {images.length > 1 && (
-            <>
+        {/* Main image */}
+        <div className="relative min-w-0 flex-1">
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-neutral-100">
+            <Image
+              src={currentImage}
+              alt={productName}
+              fill
+              preload
+              sizes="(min-width: 1536px) 560px, (min-width: 1280px) 500px, (min-width: 1024px) 46vw, 100vw"
+              className="object-cover"
+            />
+
+            {/* Previous */}
+            {safeImages.length > 1 && (
               <button
                 type="button"
                 onClick={previousImage}
-                className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white"
+                aria-label="Previous image"
+                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm transition hover:bg-white"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
+            )}
 
+            {/* Next */}
+            {safeImages.length > 1 && (
               <button
                 type="button"
                 onClick={nextImage}
-                className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white"
+                aria-label="Next image"
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm transition hover:bg-white"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
-            </>
-          )}
+            )}
 
-          <button
-            type="button"
-            onClick={() => setZoomOpen(true)}
-            className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm hover:bg-white"
-          >
-            <ZoomIn size={18} />
-          </button>
-
-          <div className="absolute bottom-4 left-4 rounded-full bg-black/70 px-3 py-1 text-xs text-white">
-            {selectedIndex + 1} / {images.length}
+            {/* Zoom */}
+            <button
+              type="button"
+              aria-label="Zoom image"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm"
+            >
+              <Maximize2 size={14} />
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Thumbnails */}
-        {images.length > 1 && (
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {images.map((image, index) => (
+      {/* =========================
+          MOBILE + TABLET GALLERY
+      ========================== */}
+      <div className="lg:hidden">
+        {/* Main image */}
+        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-neutral-100">
+          <Image
+            src={currentImage}
+            alt={productName}
+            fill
+            preload
+            sizes="100vw"
+            className="object-cover"
+          />
+
+          {/* Previous */}
+          {safeImages.length > 1 && (
+            <button
+              type="button"
+              onClick={previousImage}
+              aria-label="Previous image"
+              className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm"
+            >
+              <ChevronLeft size={18} />
+            </button>
+          )}
+
+          {/* Next */}
+          {safeImages.length > 1 && (
+            <button
+              type="button"
+              onClick={nextImage}
+              aria-label="Next image"
+              className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm"
+            >
+              <ChevronRight size={18} />
+            </button>
+          )}
+
+          {/* Zoom */}
+          <button
+            type="button"
+            aria-label="Zoom image"
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-sm"
+          >
+            <Maximize2 size={15} />
+          </button>
+
+          {/* Image counter */}
+          {safeImages.length > 1 && (
+            <div className="absolute bottom-3 right-3 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-medium text-white">
+              {activeIndex + 1}/{safeImages.length}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile thumbnails */}
+        {safeImages.length > 1 && (
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+            {safeImages.map((image, index) => (
               <button
                 key={`${image}-${index}`}
                 type="button"
-                onClick={() => setSelectedIndex(index)}
-                className={`aspect-square overflow-hidden rounded-lg border-2 ${
-                  selectedIndex === index
-                    ? "border-neutral-950"
-                    : "border-transparent"
+                onClick={() => setActiveIndex(index)}
+                aria-label={`View thumbnail ${index + 1}`}
+                className={`relative h-14 w-12 shrink-0 overflow-hidden rounded-md border ${
+                  activeIndex === index
+                    ? "border-[#c73572] ring-1 ring-[#c73572]"
+                    : "border-neutral-200"
                 }`}
               >
-                <img
+                <Image
                   src={image}
-                  alt={`${productName} ${index + 1}`}
-                  className="h-full w-full object-cover"
+                  alt={`${productName} thumbnail ${index + 1}`}
+                  fill
+                  sizes="48px"
+                  className="object-cover"
                 />
               </button>
             ))}
           </div>
         )}
       </div>
-
-      {/* Zoom */}
-      {zoomOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6">
-          <button
-            type="button"
-            onClick={() => setZoomOpen(false)}
-            className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white text-black"
-          >
-            <X size={20} />
-          </button>
-
-          <img
-            src={currentImage}
-            alt={productName}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-          />
-        </div>
-      )}
-    </>
+    </div>
   );
 }
