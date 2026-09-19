@@ -29,38 +29,72 @@ export default function StaffDashboardPage() {
     const [error, setError] = useState("");
 
     const loadDashboard = async () => {
-        try {
-            setLoading(true);
-            setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-            const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-            if (!token) {
-                setError("Authentication required");
-                return;
-            }
+    if (!token) {
+      setError("Authentication required");
+      return;
+    }
 
-            const [profileResponse, dashboardResponse] =
-                await Promise.all([
-                    getStaffProfileApi(token),
-                    getStaffDashboardApi(token),
-                ]);
+    // Load dashboard independently
+    let profileResponse;
+    let dashboardResponse;
 
-            setStaff(profileResponse.staff);
+    try {
+      profileResponse = await getStaffProfileApi(token);
 
-            setDashboard(dashboardResponse.dashboard);
-        } catch (error) {
-            console.error("STAFF DASHBOARD ERROR:", error);
+      console.log("STAFF PROFILE RESPONSE:", profileResponse);
 
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to load staff dashboard"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (!profileResponse?.staff) {
+        throw new Error("Staff profile data is missing");
+      }
+
+      setStaff(profileResponse.staff);
+    } catch (profileError) {
+      console.error("STAFF PROFILE ERROR:", profileError);
+
+      throw new Error(
+        profileError instanceof Error
+          ? `Profile: ${profileError.message}`
+          : "Failed to load staff profile"
+      );
+    }
+
+    try {
+      dashboardResponse = await getStaffDashboardApi(token);
+
+      console.log("STAFF DASHBOARD RESPONSE:", dashboardResponse);
+
+      if (!dashboardResponse?.dashboard) {
+        throw new Error("Dashboard data is missing");
+      }
+
+      setDashboard(dashboardResponse.dashboard);
+    } catch (dashboardError) {
+      console.error("STAFF DASHBOARD API ERROR:", dashboardError);
+
+      throw new Error(
+        dashboardError instanceof Error
+          ? `Dashboard: ${dashboardError.message}`
+          : "Failed to load staff dashboard"
+      );
+    }
+  } catch (error) {
+    console.error("STAFF PAGE ERROR:", error);
+
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Failed to load staff dashboard"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
     useEffect(() => {
         loadDashboard();

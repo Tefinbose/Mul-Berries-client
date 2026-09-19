@@ -1,34 +1,67 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  createStaffShipmentApi,
-  getStaffShipmentByIdApi,
-  getStaffShipmentsApi,
-  ShipmentStatus,
-  StaffShipment,
-  updateStaffShipmentStatusApi,
-} from "@/services/staffApi";
+  Package,
+  RefreshCw,
+  Search,
+  Eye,
+  Truck,
+  Clock3,
+  CheckCircle2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+} from "lucide-react";
 
-const shipmentStatuses: ShipmentStatus[] = [
-  "shipment_created",
-  "courier_assigned",
-  "awb_generated",
-  "label_generated",
-  "pickup_scheduled",
-  "picked_up",
-  "in_transit",
-  "out_for_delivery",
-  "delivered",
-  "ndr",
-  "rto",
-  "return_requested",
-  "returned",
-  "cancelled",
-];
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-const statusLabels: Record<ShipmentStatus, string> = {
+interface ShipmentOrder {
+  _id: string;
+  totalAmount: number;
+  paymentStatus: string;
+  orderStatus: string;
+  createdAt: string;
+}
+
+interface Shipment {
+  _id: string;
+  order: ShipmentOrder;
+  user: string | null;
+  courierName?: string;
+  courierProvider?: string;
+  courierService?: string;
+  awbNumber?: string;
+  trackingNumber?: string;
+  labelUrl?: string;
+  shipmentStatus: string;
+  pickupScheduledAt?: string;
+  pickedUpAt?: string;
+  deliveredAt?: string;
+  estimatedDeliveryDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ShipmentResponse {
+  success: boolean;
+  shipments: Shipment[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  message?: string;
+}
+
+const shipmentStatusLabels: Record<string, string> = {
   shipment_created: "Shipment Created",
   courier_assigned: "Courier Assigned",
   awb_generated: "AWB Generated",
@@ -45,12 +78,52 @@ const statusLabels: Record<ShipmentStatus, string> = {
   cancelled: "Cancelled",
 };
 
-function formatStatus(status: ShipmentStatus) {
-  return statusLabels[status] || status;
+function getStatusStyle(status: string) {
+  switch (status) {
+    case "shipment_created":
+    case "courier_assigned":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+
+    case "awb_generated":
+    case "label_generated":
+    case "pickup_scheduled":
+      return "bg-purple-50 text-purple-700 border-purple-200";
+
+    case "picked_up":
+    case "in_transit":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+
+    case "out_for_delivery":
+      return "bg-orange-50 text-orange-700 border-orange-200";
+
+    case "delivered":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+    case "ndr":
+    case "rto":
+    case "return_requested":
+      return "bg-red-50 text-red-700 border-red-200";
+
+    case "returned":
+      return "bg-slate-100 text-slate-700 border-slate-200";
+
+    case "cancelled":
+      return "bg-red-50 text-red-700 border-red-200";
+
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+}
+
+function formatStatus(status: string) {
+  return (
+    shipmentStatusLabels[status] ||
+    status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+  );
 }
 
 function formatDate(date?: string) {
-  if (!date) return "—";
+  if (!date) return "Not available";
 
   return new Date(date).toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -59,659 +132,456 @@ function formatDate(date?: string) {
   });
 }
 
-function getOrderId(shipment: StaffShipment) {
-  if (typeof shipment.order === "string") {
-    return shipment.order;
-  }
+function formatDateTime(date?: string) {
+  if (!date) return "Not available";
 
-  return shipment.order?._id || "—";
+  return new Date(date).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function getCustomerName(shipment: StaffShipment) {
-  if (!shipment.user || typeof shipment.user === "string") {
-    return "—";
-  }
+export default function StaffShipmentsPage() {
+  const router = useRouter();
 
-  return shipment.user.name || "—";
-}
-
-function getCustomerEmail(shipment: StaffShipment) {
-  if (!shipment.user || typeof shipment.user === "string") {
-    return "—";
-  }
-
-  return shipment.user.email || "—";
-}
-
-function statusClass(status: ShipmentStatus) {
-  switch (status) {
-    case "delivered":
-      return "bg-green-100 text-green-700";
-
-    case "cancelled":
-    case "rto":
-    case "returned":
-      return "bg-red-100 text-red-700";
-
-    case "ndr":
-      return "bg-orange-100 text-orange-700";
-
-    case "in_transit":
-    case "picked_up":
-    case "out_for_delivery":
-      return "bg-blue-100 text-blue-700";
-
-    case "courier_assigned":
-    case "awb_generated":
-    case "label_generated":
-    case "pickup_scheduled":
-      return "bg-purple-100 text-purple-700";
-
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-}
-
-export default function StaffShippingPage() {
-  const [token, setToken] = useState("");
-
-  const [shipments, setShipments] = useState<StaffShipment[]>([]);
-
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [error, setError] = useState("");
-
-  const [successMessage, setSuccessMessage] = useState("");
-
   const [search, setSearch] = useState("");
-
-  const [statusFilter, setStatusFilter] =
-    useState<ShipmentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [page, setPage] = useState(1);
-
-  const [totalPages, setTotalPages] = useState(1);
-
-  const [selectedShipment, setSelectedShipment] =
-    useState<StaffShipment | null>(null);
-
-  const [detailsLoading, setDetailsLoading] =
-    useState(false);
-
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
-
-  const [updatingStatus, setUpdatingStatus] =
-    useState(false);
-
-  const [creatingShipment, setCreatingShipment] =
-    useState(false);
-
-  const [createForm, setCreateForm] = useState({
-    orderId: "",
-    courierName: "",
-    courierProvider: "",
-    courierService: "",
-    estimatedDeliveryDate: "",
-    notes: "",
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
   });
 
-  useEffect(() => {
-    const storedToken =
-      localStorage.getItem("token");
+  const getToken = () => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
+  };
 
-    if (!storedToken) {
-      setError("Authentication required");
-      setLoading(false);
-      return;
-    }
+  const loadShipments = useCallback(
+    async (showRefresh = false) => {
+      try {
+        if (showRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
 
-    setToken(storedToken);
-  }, []);
+        setError("");
 
-  const loadShipments = async () => {
-    if (!token) return;
+        const token = getToken();
 
-    try {
-      setLoading(true);
-      setError("");
+        if (!token) {
+          router.push("/staff/login");
+          return;
+        }
 
-      const response =
-        await getStaffShipmentsApi(
-          token,
+        const response = await fetch(
+          `${API_URL}/staff/shipments?page=${page}&limit=20`,
           {
-            status:
-              statusFilter === "all"
-                ? undefined
-                : statusFilter,
-
-            search: search.trim() || undefined,
-
-            page,
-
-            limit: 10,
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
 
-      setShipments(response.shipments);
+        const data: ShipmentResponse = await response.json();
 
-      setTotalPages(
-        response.pagination.totalPages || 1
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load shipments"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "Failed to load shipments"
+          );
+        }
+
+        setShipments(data.shipments || []);
+        setPagination(data.pagination);
+      } catch (err) {
+        console.error("LOAD STAFF SHIPMENTS ERROR:", err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load shipments"
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [page, router]
+  );
 
   useEffect(() => {
-    if (!token) return;
+    loadShipments();
+  }, [loadShipments]);
 
-    const timer = setTimeout(() => {
-      loadShipments();
-    }, 300);
+  const filteredShipments = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-    return () => clearTimeout(timer);
-  }, [
-    token,
-    page,
-    statusFilter,
-    search,
-  ]);
+    return shipments.filter((shipment) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        shipment.shipmentStatus === statusFilter;
 
-  const summary = useMemo(() => {
-    const total = shipments.length;
+      if (!matchesStatus) return false;
 
-    const active = shipments.filter(
-      (shipment) =>
-        ![
-          "delivered",
-          "cancelled",
-          "returned",
-          "rto",
-        ].includes(shipment.shipmentStatus)
-    ).length;
+      if (!query) return true;
 
-    const delivered = shipments.filter(
-      (shipment) =>
-        shipment.shipmentStatus === "delivered"
-    ).length;
+      return (
+        shipment._id.toLowerCase().includes(query) ||
+        shipment.order?._id?.toLowerCase().includes(query) ||
+        shipment.courierName?.toLowerCase().includes(query) ||
+        shipment.courierProvider?.toLowerCase().includes(query) ||
+        shipment.awbNumber?.toLowerCase().includes(query) ||
+        shipment.trackingNumber?.toLowerCase().includes(query)
+      );
+    });
+  }, [shipments, search, statusFilter]);
 
-    const exceptions = shipments.filter(
-      (shipment) =>
-        shipment.shipmentStatus === "ndr" ||
-        shipment.shipmentStatus === "rto"
-    ).length;
-
+  const stats = useMemo(() => {
     return {
-      total,
-      active,
-      delivered,
-      exceptions,
+      total: pagination.total,
+      created: shipments.filter(
+        (item) => item.shipmentStatus === "shipment_created"
+      ).length,
+      transit: shipments.filter(
+        (item) =>
+          item.shipmentStatus === "picked_up" ||
+          item.shipmentStatus === "in_transit"
+      ).length,
+      delivered: shipments.filter(
+        (item) => item.shipmentStatus === "delivered"
+      ).length,
     };
-  }, [shipments]);
+  }, [shipments, pagination.total]);
 
-  const handleViewShipment = async (
-    id: string
-  ) => {
-    if (!token) return;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+        <div className="mx-auto max-w-7xl animate-pulse space-y-6">
+          <div className="h-8 w-64 rounded-lg bg-slate-200" />
 
-    try {
-      setDetailsLoading(true);
-      setError("");
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-32 rounded-2xl bg-white"
+              />
+            ))}
+          </div>
 
-      const response =
-        await getStaffShipmentByIdApi(
-          token,
-          id
-        );
+          <div className="h-16 rounded-2xl bg-white" />
 
-      setSelectedShipment(
-        response.shipment
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load shipment"
-      );
-    } finally {
-      setDetailsLoading(false);
-    }
-  };
-
-  const handleUpdateStatus = async (
-    id: string,
-    newStatus: ShipmentStatus
-  ) => {
-    if (!token) return;
-
-    try {
-      setUpdatingStatus(true);
-      setError("");
-      setSuccessMessage("");
-
-      const response =
-        await updateStaffShipmentStatusApi(
-          token,
-          id,
-          newStatus
-        );
-
-      setSuccessMessage(
-        response.message
-      );
-
-      setSelectedShipment(
-        response.shipment
-      );
-
-      await loadShipments();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to update shipment status"
-      );
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
-  const handleCreateShipment = async (
-    e: React.FormEvent
-  ) => {
-    e.preventDefault();
-
-    if (!token) return;
-
-    if (!createForm.orderId.trim()) {
-      setError("Order ID is required");
-      return;
-    }
-
-    try {
-      setCreatingShipment(true);
-      setError("");
-      setSuccessMessage("");
-
-      const response =
-        await createStaffShipmentApi(
-          token,
-          {
-            orderId:
-              createForm.orderId.trim(),
-
-            courierName:
-              createForm.courierName.trim() ||
-              undefined,
-
-            courierProvider:
-              createForm.courierProvider.trim() ||
-              undefined,
-
-            courierService:
-              createForm.courierService.trim() ||
-              undefined,
-
-            estimatedDeliveryDate:
-              createForm.estimatedDeliveryDate ||
-              undefined,
-
-            notes:
-              createForm.notes.trim() ||
-              undefined,
-          }
-        );
-
-      setSuccessMessage(
-        response.message
-      );
-
-      setShowCreateModal(false);
-
-      setCreateForm({
-        orderId: "",
-        courierName: "",
-        courierProvider: "",
-        courierService: "",
-        estimatedDeliveryDate: "",
-        notes: "",
-      });
-
-      setPage(1);
-
-      await loadShipments();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create shipment"
-      );
-    } finally {
-      setCreatingShipment(false);
-    }
-  };
+          <div className="h-96 rounded-2xl bg-white" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
-
-        {/* HEADER */}
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Shipping
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+              Shipments
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Manage shipments, couriers and delivery status.
+            <p className="mt-1 text-sm text-slate-500">
+              Manage courier shipments, AWB numbers and delivery status.
             </p>
           </div>
 
           <button
-            onClick={() =>
-              setShowCreateModal(true)
-            }
-            className="rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+            onClick={() => loadShipments(true)}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
           >
-            + Create Shipment
+            <RefreshCw
+              className={`h-4 w-4 ${
+                refreshing ? "animate-spin" : ""
+              }`}
+            />
+            Refresh
           </button>
         </div>
 
-        {/* MESSAGES */}
+        {/* Error */}
         {error && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+
+            <div>
+              <p className="text-sm font-semibold text-red-800">
+                Unable to load shipments
+              </p>
+
+              <p className="mt-1 text-sm text-red-700">
+                {error}
+              </p>
+            </div>
           </div>
         )}
 
-        {successMessage && (
-          <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {successMessage}
-          </div>
-        )}
+        {/* Stats */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <Package className="h-5 w-5 text-blue-600" />
+              </div>
 
-        {/* SUMMARY */}
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <span className="text-xs font-medium text-slate-400">
+                Total
+              </span>
+            </div>
 
-          <div className="rounded-2xl border bg-white p-5">
-            <p className="text-sm text-gray-500">
+            <p className="mt-5 text-3xl font-bold text-slate-900">
+              {stats.total}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
               Total Shipments
             </p>
+          </div>
 
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {summary.total}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50">
+                <Clock3 className="h-5 w-5 text-purple-600" />
+              </div>
+
+              <span className="text-xs font-medium text-slate-400">
+                Pending
+              </span>
+            </div>
+
+            <p className="mt-5 text-3xl font-bold text-slate-900">
+              {stats.created}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Shipment Created
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-white p-5">
-            <p className="text-sm text-gray-500">
-              Active
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
+                <Truck className="h-5 w-5 text-amber-600" />
+              </div>
+
+              <span className="text-xs font-medium text-slate-400">
+                Active
+              </span>
+            </div>
+
+            <p className="mt-5 text-3xl font-bold text-slate-900">
+              {stats.transit}
             </p>
 
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {summary.active}
+            <p className="mt-1 text-sm text-slate-500">
+              In Transit
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-white p-5">
-            <p className="text-sm text-gray-500">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              </div>
+
+              <span className="text-xs font-medium text-slate-400">
+                Completed
+              </span>
+            </div>
+
+            <p className="mt-5 text-3xl font-bold text-slate-900">
+              {stats.delivered}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
               Delivered
             </p>
-
-            <p className="mt-2 text-2xl font-semibold text-green-600">
-              {summary.delivered}
-            </p>
           </div>
-
-          <div className="rounded-2xl border bg-white p-5">
-            <p className="text-sm text-gray-500">
-              Exceptions
-            </p>
-
-            <p className="mt-2 text-2xl font-semibold text-orange-600">
-              {summary.exceptions}
-            </p>
-          </div>
-
         </div>
 
-        {/* FILTERS */}
-        <div className="mb-6 rounded-2xl border bg-white p-4">
-          <div className="flex flex-col gap-3 md:flex-row">
+        {/* Filters */}
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
-            <div className="flex-1">
               <input
                 type="text"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search AWB, tracking number or courier..."
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search shipment, order, courier, AWB..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
               />
             </div>
 
             <select
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(
-                  e.target.value as
-                    | ShipmentStatus
-                    | "all"
-                );
-                setPage(1);
-              }}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-black"
+              onChange={(event) =>
+                setStatusFilter(event.target.value)
+              }
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
             >
-              <option value="all">
-                All Statuses
+              <option value="all">All Statuses</option>
+              <option value="shipment_created">
+                Shipment Created
               </option>
-
-              {shipmentStatuses.map(
-                (status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {formatStatus(status)}
-                  </option>
-                )
-              )}
+              <option value="courier_assigned">
+                Courier Assigned
+              </option>
+              <option value="awb_generated">
+                AWB Generated
+              </option>
+              <option value="label_generated">
+                Label Generated
+              </option>
+              <option value="pickup_scheduled">
+                Pickup Scheduled
+              </option>
+              <option value="picked_up">Picked Up</option>
+              <option value="in_transit">In Transit</option>
+              <option value="out_for_delivery">
+                Out for Delivery
+              </option>
+              <option value="delivered">Delivered</option>
+              <option value="ndr">NDR</option>
+              <option value="rto">RTO</option>
+              <option value="return_requested">
+                Return Requested
+              </option>
+              <option value="returned">Returned</option>
+              <option value="cancelled">Cancelled</option>
             </select>
-
-            <button
-              onClick={loadShipments}
-              className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              Refresh
-            </button>
-
           </div>
         </div>
 
-        {/* SHIPMENT LIST */}
-        <div className="overflow-hidden rounded-2xl border bg-white">
+        {/* Shipment list */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Desktop */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/70">
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Shipment
+                  </th>
 
-          {loading ? (
-            <div className="p-10 text-center text-sm text-gray-500">
-              Loading shipments...
-            </div>
-          ) : shipments.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
-                🚚
-              </div>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Order
+                  </th>
 
-              <h3 className="font-medium text-gray-900">
-                No shipments found
-              </h3>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Courier
+                  </th>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Create a shipment or change your filters.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* DESKTOP TABLE */}
-              <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full text-left">
-                  <thead className="border-b bg-gray-50">
-                    <tr>
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Shipment
-                      </th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Status
+                  </th>
 
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Order
-                      </th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Delivery
+                  </th>
 
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Customer
-                      </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Action
+                  </th>
+                </tr>
+              </thead>
 
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Courier
-                      </th>
+              <tbody>
+                {filteredShipments.length > 0 ? (
+                  filteredShipments.map((shipment) => (
+                    <tr
+                      key={shipment._id}
+                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60"
+                    >
+                      <td className="px-6 py-5">
+                        <div>
+                          <p className="font-mono text-xs font-semibold text-slate-900">
+                            #{shipment._id.slice(-8).toUpperCase()}
+                          </p>
 
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Status
-                      </th>
-
-                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Created
-                      </th>
-
-                      <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y">
-                    {shipments.map(
-                      (shipment) => (
-                        <tr
-                          key={shipment._id}
-                          className="transition hover:bg-gray-50"
-                        >
-                          <td className="px-5 py-4">
-                            <p className="font-medium text-gray-900">
-                              {shipment.awbNumber ||
-                                shipment.trackingNumber ||
-                                "Not assigned"}
+                          {shipment.awbNumber ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              AWB:{" "}
+                              <span className="font-medium text-slate-700">
+                                {shipment.awbNumber}
+                              </span>
                             </p>
-
-                            <p className="mt-1 text-xs text-gray-500">
-                              ID:{" "}
-                              {shipment._id.slice(
-                                -8
-                              )}
+                          ) : shipment.trackingNumber ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Tracking:{" "}
+                              <span className="font-medium text-slate-700">
+                                {shipment.trackingNumber}
+                              </span>
                             </p>
-                          </td>
-
-                          <td className="px-5 py-4 text-sm text-gray-700">
-                            {getOrderId(
-                              shipment
-                            ).slice(-8)}
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <p className="text-sm font-medium text-gray-900">
-                              {getCustomerName(
-                                shipment
-                              )}
+                          ) : (
+                            <p className="mt-1 text-xs text-slate-400">
+                              AWB not generated
                             </p>
+                          )}
+                        </div>
+                      </td>
 
-                            <p className="mt-1 text-xs text-gray-500">
-                              {getCustomerEmail(
-                                shipment
-                              )}
-                            </p>
-                          </td>
+                      <td className="px-6 py-5">
+                        <p className="font-mono text-xs font-semibold text-slate-800">
+                          #{shipment.order?._id
+                            ?.slice(-8)
+                            .toUpperCase()}
+                        </p>
 
-                          <td className="px-5 py-4">
-                            <p className="text-sm text-gray-900">
+                        <p className="mt-1 text-xs text-slate-500">
+                          ₹
+                          {shipment.order?.totalAmount?.toLocaleString(
+                            "en-IN"
+                          )}
+                        </p>
+                      </td>
+
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                            <Truck className="h-4 w-4 text-slate-600" />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">
                               {shipment.courierName ||
                                 "Not assigned"}
                             </p>
 
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="text-xs text-slate-500">
                               {shipment.courierService ||
+                                shipment.courierProvider ||
                                 "—"}
                             </p>
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${statusClass(
-                                shipment.shipmentStatus
-                              )}`}
-                            >
-                              {formatStatus(
-                                shipment.shipmentStatus
-                              )}
-                            </span>
-                          </td>
-
-                          <td className="px-5 py-4 text-sm text-gray-500">
-                            {formatDate(
-                              shipment.createdAt
-                            )}
-                          </td>
-
-                          <td className="px-5 py-4 text-right">
-                            <button
-                              onClick={() =>
-                                handleViewShipment(
-                                  shipment._id
-                                )
-                              }
-                              className="rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* MOBILE CARDS */}
-              <div className="divide-y lg:hidden">
-                {shipments.map(
-                  (shipment) => (
-                    <div
-                      key={shipment._id}
-                      className="p-5"
-                    >
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {shipment.awbNumber ||
-                              shipment.trackingNumber ||
-                              "Not assigned"}
-                          </p>
-
-                          <p className="mt-1 text-xs text-gray-500">
-                            Order #
-                            {getOrderId(
-                              shipment
-                            ).slice(-8)}
-                          </p>
+                          </div>
                         </div>
+                      </td>
 
+                      <td className="px-6 py-5">
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusStyle(
                             shipment.shipmentStatus
                           )}`}
                         >
@@ -719,561 +589,238 @@ export default function StaffShippingPage() {
                             shipment.shipmentStatus
                           )}
                         </span>
-                      </div>
+                      </td>
 
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between gap-4">
-                          <span className="text-gray-500">
-                            Customer
-                          </span>
+                      <td className="px-6 py-5">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 h-4 w-4 text-slate-400" />
 
-                          <span className="text-right font-medium text-gray-900">
-                            {getCustomerName(
-                              shipment
-                            )}
-                          </span>
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">
+                              {formatDate(
+                                shipment.estimatedDeliveryDate
+                              )}
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-400">
+                              Estimated
+                            </p>
+                          </div>
                         </div>
+                      </td>
 
-                        <div className="flex justify-between gap-4">
-                          <span className="text-gray-500">
-                            Courier
-                          </span>
+                      <td className="px-6 py-5 text-right">
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/staff/shipments/${shipment._id}`
+                            )
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-16 text-center"
+                    >
+                      <Package className="mx-auto h-10 w-10 text-slate-300" />
 
-                          <span className="text-right text-gray-900">
-                            {shipment.courierName ||
-                              "Not assigned"}
-                          </span>
-                        </div>
+                      <p className="mt-4 text-sm font-semibold text-slate-700">
+                        No shipments found
+                      </p>
 
-                        <div className="flex justify-between gap-4">
-                          <span className="text-gray-500">
-                            Created
-                          </span>
-
-                          <span className="text-gray-900">
-                            {formatDate(
-                              shipment.createdAt
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          handleViewShipment(
-                            shipment._id
-                          )
-                        }
-                        className="mt-4 w-full rounded-xl border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        View Shipment
-                      </button>
-                    </div>
-                  )
+                      <p className="mt-1 text-sm text-slate-500">
+                        Try changing your search or status filter.
+                      </p>
+                    </td>
+                  </tr>
                 )}
-              </div>
-            </>
-          )}
+              </tbody>
+            </table>
+          </div>
 
-        </div>
+          {/* Mobile */}
+          <div className="divide-y divide-slate-100 md:hidden">
+            {filteredShipments.length > 0 ? (
+              filteredShipments.map((shipment) => (
+                <div key={shipment._id} className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-mono text-xs font-bold text-slate-900">
+                        #{shipment._id.slice(-8).toUpperCase()}
+                      </p>
 
-        {/* PAGINATION */}
-        {!loading &&
-          shipments.length > 0 && (
-            <div className="mt-5 flex items-center justify-between">
+                      <p className="mt-1 font-mono text-xs text-slate-500">
+                        Order #
+                        {shipment.order?._id
+                          ?.slice(-8)
+                          .toUpperCase()}
+                      </p>
+                    </div>
 
-              <button
-                disabled={page <= 1}
-                onClick={() =>
-                  setPage((current) =>
-                    Math.max(current - 1, 1)
-                  )
-                }
-                className="rounded-xl border px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getStatusStyle(
+                        shipment.shipmentStatus
+                      )}`}
+                    >
+                      {formatStatus(
+                        shipment.shipmentStatus
+                      )}
+                    </span>
+                  </div>
 
-              <span className="text-sm text-gray-500">
-                Page {page} of{" "}
-                {totalPages}
-              </span>
+                  <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+                        <Truck className="h-5 w-5 text-slate-600" />
+                      </div>
 
-              <button
-                disabled={page >= totalPages}
-                onClick={() =>
-                  setPage((current) =>
-                    Math.min(
-                      current + 1,
-                      totalPages
-                    )
-                  )
-                }
-                className="rounded-xl border px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {shipment.courierName ||
+                            "Courier not assigned"}
+                        </p>
 
-            </div>
-          )}
+                        <p className="text-xs text-slate-500">
+                          {shipment.courierService ||
+                            shipment.courierProvider ||
+                            "Service not available"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-      </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-100 p-3">
+                      <p className="text-xs text-slate-400">
+                        Order Value
+                      </p>
 
-      {/* SHIPMENT DETAILS MODAL */}
-      {(selectedShipment ||
-        detailsLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        ₹
+                        {shipment.order?.totalAmount?.toLocaleString(
+                          "en-IN"
+                        )}
+                      </p>
+                    </div>
 
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+                    <div className="rounded-xl border border-slate-100 p-3">
+                      <p className="text-xs text-slate-400">
+                        Delivery
+                      </p>
 
-            {detailsLoading ? (
-              <div className="p-10 text-center text-sm text-gray-500">
-                Loading shipment...
-              </div>
-            ) : selectedShipment ? (
-              <>
-                <div className="flex items-center justify-between border-b p-5">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Shipment Details
-                    </h2>
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        {formatDate(
+                          shipment.estimatedDeliveryDate
+                        )}
+                      </p>
+                    </div>
+                  </div>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      {selectedShipment._id}
+                  <div className="mt-3 rounded-xl border border-slate-100 p-3">
+                    <p className="text-xs text-slate-400">
+                      AWB / Tracking
+                    </p>
+
+                    <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-700">
+                      {shipment.awbNumber ||
+                        shipment.trackingNumber ||
+                        "Not generated"}
                     </p>
                   </div>
 
                   <button
                     onClick={() =>
-                      setSelectedShipment(
-                        null
+                      router.push(
+                        `/staff/shipments/${shipment._id}`
                       )
                     }
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   >
-                    ✕
+                    <Eye className="h-4 w-4" />
+                    View Shipment
                   </button>
                 </div>
+              ))
+            ) : (
+              <div className="px-5 py-16 text-center">
+                <Package className="mx-auto h-10 w-10 text-slate-300" />
 
-                <div className="space-y-6 p-5">
+                <p className="mt-4 text-sm font-semibold text-slate-700">
+                  No shipments found
+                </p>
 
-                  {/* STATUS */}
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Current Status
-                    </p>
-
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1.5 text-sm font-medium ${statusClass(
-                        selectedShipment.shipmentStatus
-                      )}`}
-                    >
-                      {formatStatus(
-                        selectedShipment.shipmentStatus
-                      )}
-                    </span>
-                  </div>
-
-                  {/* DETAILS */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Order ID
-                      </p>
-
-                      <p className="mt-1 break-all text-sm font-medium text-gray-900">
-                        {getOrderId(
-                          selectedShipment
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Customer
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {getCustomerName(
-                          selectedShipment
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Courier
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {selectedShipment.courierName ||
-                          "Not assigned"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Provider
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {selectedShipment.courierProvider ||
-                          "Not assigned"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        AWB Number
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {selectedShipment.awbNumber ||
-                          "Not generated"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Tracking Number
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {selectedShipment.trackingNumber ||
-                          "Not available"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Pickup Scheduled
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {formatDate(
-                          selectedShipment.pickupScheduledAt
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500">
-                        Estimated Delivery
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-gray-900">
-                        {formatDate(
-                          selectedShipment.estimatedDeliveryDate
-                        )}
-                      </p>
-                    </div>
-
-                  </div>
-
-                  {/* STATUS UPDATE */}
-                  <div>
-                    <p className="mb-2 text-sm font-semibold text-gray-900">
-                      Update Shipment Status
-                    </p>
-
-                    <select
-                      disabled={
-                        updatingStatus
-                      }
-                      value={
-                        selectedShipment.shipmentStatus
-                      }
-                      onChange={(e) =>
-                        handleUpdateStatus(
-                          selectedShipment._id,
-                          e.target.value as ShipmentStatus
-                        )
-                      }
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-black disabled:opacity-50"
-                    >
-                      {shipmentStatuses.map(
-                        (status) => (
-                          <option
-                            key={status}
-                            value={status}
-                          >
-                            {formatStatus(
-                              status
-                            )}
-                          </option>
-                        )
-                      )}
-                    </select>
-
-                    {updatingStatus && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Updating status...
-                      </p>
-                    )}
-                  </div>
-
-                  {/* TIMELINE */}
-                  <div>
-                    <p className="mb-3 text-sm font-semibold text-gray-900">
-                      Shipment Timeline
-                    </p>
-
-                    <div className="space-y-3">
-
-                      {shipmentStatuses
-                        .slice(0, 9)
-                        .map(
-                          (status, index) => {
-                            const currentIndex =
-                              shipmentStatuses.indexOf(
-                                selectedShipment.shipmentStatus
-                              );
-
-                            const isCompleted =
-                              index <=
-                              currentIndex;
-
-                            return (
-                              <div
-                                key={status}
-                                className="flex items-center gap-3"
-                              >
-                                <div
-                                  className={`h-3 w-3 rounded-full ${
-                                    isCompleted
-                                      ? "bg-black"
-                                      : "bg-gray-200"
-                                  }`}
-                                />
-
-                                <span
-                                  className={`text-sm ${
-                                    isCompleted
-                                      ? "font-medium text-gray-900"
-                                      : "text-gray-400"
-                                  }`}
-                                >
-                                  {formatStatus(
-                                    status
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          }
-                        )}
-
-                    </div>
-                  </div>
-
-                  {selectedShipment.notes && (
-                    <div className="rounded-xl border bg-gray-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Notes
-                      </p>
-
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
-                        {selectedShipment.notes}
-                      </p>
-                    </div>
-                  )}
-
-                </div>
-              </>
-            ) : null}
-
-          </div>
-        </div>
-      )}
-
-      {/* CREATE SHIPMENT MODAL */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white">
-
-            <div className="flex items-center justify-between border-b p-5">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Create Shipment
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Prepare an order for shipping.
+                <p className="mt-1 text-sm text-slate-500">
+                  Try changing your search or status filter.
                 </p>
               </div>
-
-              <button
-                onClick={() =>
-                  setShowCreateModal(false)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateShipment}
-              className="space-y-4 p-5"
-            >
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Order ID *
-                </label>
-
-                <input
-                  value={createForm.orderId}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      orderId:
-                        e.target.value,
-                    })
-                  }
-                  placeholder="Enter order ID"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Courier Name
-                </label>
-
-                <input
-                  value={
-                    createForm.courierName
-                  }
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      courierName:
-                        e.target.value,
-                    })
-                  }
-                  placeholder="e.g. Delhivery"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Courier Provider
-                </label>
-
-                <input
-                  value={
-                    createForm.courierProvider
-                  }
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      courierProvider:
-                        e.target.value,
-                    })
-                  }
-                  placeholder="e.g. delhivery"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Courier Service
-                </label>
-
-                <input
-                  value={
-                    createForm.courierService
-                  }
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      courierService:
-                        e.target.value,
-                    })
-                  }
-                  placeholder="e.g. Surface"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Estimated Delivery
-                </label>
-
-                <input
-                  type="date"
-                  value={
-                    createForm.estimatedDeliveryDate
-                  }
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      estimatedDeliveryDate:
-                        e.target.value,
-                    })
-                  }
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Notes
-                </label>
-
-                <textarea
-                  value={createForm.notes}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      notes: e.target.value,
-                    })
-                  }
-                  placeholder="Optional shipment notes"
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-black"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowCreateModal(false)
-                  }
-                  className="flex-1 rounded-xl border px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={
-                    creatingShipment
-                  }
-                  className="flex-1 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {creatingShipment
-                    ? "Creating..."
-                    : "Create Shipment"}
-                </button>
-
-              </div>
-
-            </form>
-
+            )}
           </div>
-        </div>
-      )}
 
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+              <p className="text-sm text-slate-500">
+                Page{" "}
+                <span className="font-semibold text-slate-700">
+                  {pagination.page}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-slate-700">
+                  {pagination.totalPages}
+                </span>
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setPage((current) => Math.max(1, current - 1))
+                  }
+                  disabled={!pagination.hasPreviousPage}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </button>
+
+                <button
+                  onClick={() =>
+                    setPage((current) =>
+                      pagination.hasNextPage
+                        ? current + 1
+                        : current
+                    )
+                  }
+                  disabled={!pagination.hasNextPage}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer information */}
+        {shipments.length > 0 && (
+          <div className="mt-4 text-xs text-slate-400">
+            Showing {filteredShipments.length} of{" "}
+            {shipments.length} shipments on this page.
+            <span className="ml-2">
+              Last refreshed:{" "}
+              {formatDateTime(shipments[0]?.updatedAt)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
-
+} 
