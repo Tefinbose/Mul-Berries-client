@@ -14,6 +14,7 @@ export interface AuthUser {
   email: string;
   phone?: string;
   role: string;
+  permissions?: string[];
   isActive: boolean;
 }
 

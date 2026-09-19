@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+} from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginApi } from "@/services/authApi";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -12,27 +22,91 @@ export default function LoginPage() {
     password: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
 
     setFormData((previous) => ({
       ...previous,
       [name]: value,
     }));
+
+    // Remove previous error when user starts typing again
+    if (error) {
+      setError("");
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
-    console.log("Login details:", formData);
+    setError("");
+    setLoading(true);
 
-    alert("Login submitted!");
+    try {
+      const response = await loginApi(formData);
+
+      console.log("LOGIN RESPONSE:", response);
+
+      if (!response.success) {
+        setError(
+          response.message || "Login failed"
+        );
+        return;
+      }
+
+      /*
+       * Save authentication information.
+       *
+       * The token will be used later for protected
+       * API requests such as:
+       *
+       * /api/cart
+       * /api/wishlist
+       * /api/addresses
+       * /api/orders
+       * /api/auth/me
+       */
+      localStorage.setItem(
+        "token",
+        response.token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.user)
+      );
+
+      // Redirect after successful login
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError(
+          "Unable to login. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="min-h-screen bg-stone-50">
       <div className="grid min-h-screen lg:grid-cols-2">
-        {/* LEFT SIDE */}
+        {/* =========================
+            LEFT SIDE
+        ========================== */}
         <div className="hidden bg-stone-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
           <Link
             href="/"
@@ -53,7 +127,8 @@ export default function LoginPage() {
             </h1>
 
             <p className="mt-6 leading-7 text-stone-400">
-              Sign in to access your wishlist, orders, saved addresses and
+              Sign in to access your wishlist,
+              orders, saved addresses and
               personalized shopping experience.
             </p>
           </div>
@@ -63,7 +138,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* =========================
+            RIGHT SIDE
+        ========================== */}
         <div className="flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">
             {/* Mobile Logo */}
@@ -74,6 +151,7 @@ export default function LoginPage() {
               Mulberries
             </Link>
 
+            {/* Heading */}
             <div className="mb-8">
               <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-stone-500">
                 Account
@@ -88,7 +166,24 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            {/* =========================
+                ERROR MESSAGE
+            ========================== */}
+            {error && (
+              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-600">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            {/* =========================
+                FORM
+            ========================== */}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
               {/* Email */}
               <div>
                 <label
@@ -111,8 +206,9 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
+                    autoComplete="email"
                     required
-                    className="w-full rounded-xl border border-stone-200 bg-white py-3.5 pl-11 pr-4 text-sm outline-none transition focus:border-stone-900"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-3.5 pl-11 pr-4 text-sm outline-none transition focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
                   />
                 </div>
               </div>
@@ -144,19 +240,32 @@ export default function LoginPage() {
                   <input
                     id="password"
                     name="password"
-                    type={showPassword ? "text" : "password"}
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
                     required
-                    className="w-full rounded-xl border border-stone-200 bg-white py-3.5 pl-11 pr-12 text-sm outline-none transition focus:border-stone-900"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-3.5 pl-11 pr-12 text-sm outline-none transition focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
                   />
 
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) => !previous
+                      )
+                    }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900"
-                    aria-label="Toggle password visibility"
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff size={18} />
@@ -167,13 +276,23 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Login */}
+              {/* Login Button */}
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-sm font-medium text-white transition hover:bg-stone-700"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign In
-                <ArrowRight size={17} />
+                {loading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight size={17} />
+                  </>
+                )}
               </button>
             </form>
 
@@ -191,7 +310,8 @@ export default function LoginPage() {
             {/* Guest Checkout */}
             <div className="mt-8 border-t border-stone-200 pt-6 text-center">
               <p className="text-xs text-stone-500">
-                You can also continue shopping without an account.
+                You can also continue shopping without
+                an account.
               </p>
 
               <Link
