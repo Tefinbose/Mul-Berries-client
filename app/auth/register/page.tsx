@@ -75,6 +75,9 @@ export default function RegisterPage() {
         JSON.stringify(response.user)
       );
 
+      // Tell the navbar the user is now logged in
+      window.dispatchEvent(new Event("auth-change"));
+
       console.log("Registration successful:", response);
 
       alert("Account created successfully!");

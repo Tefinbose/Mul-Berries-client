@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Heart,
@@ -70,6 +70,56 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
+  /* -------------------------------------------------------
+     AUTH STATE
+     Reads the token saved by the login / register pages.
+     Re-checks when:
+       - the page first loads
+       - login / register / logout fires "auth-change"
+       - another browser tab logs in or out ("storage")
+  ------------------------------------------------------- */
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const syncAuth = () => {
+      try {
+        setIsLoggedIn(Boolean(localStorage.getItem("token")));
+      } catch {
+        setIsLoggedIn(false);
+      }
+
+      setAuthChecked(true);
+    };
+
+    syncAuth();
+
+    window.addEventListener("storage", syncAuth);
+    window.addEventListener("auth-change", syncAuth);
+
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("auth-change", syncAuth);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch {
+      // ignore storage errors
+    }
+
+    setIsLoggedIn(false);
+    setMobileMenuOpen(false);
+
+    window.dispatchEvent(new Event("auth-change"));
+
+    // Full reload so every page drops the old session
+    window.location.href = "/";
+  };
+
   return (
     <>
       {/* =====================================================
@@ -95,8 +145,8 @@ export default function Navbar() {
       ===================================================== */}
 
       <header className="sticky top-0 z-50 w-full border-b border-neutral-200/80 bg-white/95 backdrop-blur-xl">
-        {/* Header height: 72px mobile / 88px desktop */}
-        <div className="site-container relative flex h-[72px] items-center lg:h-[88px]">
+        {/* Header height: 80px mobile / 88px desktop */}
+        <div className="site-container relative flex h-20 items-center lg:h-[88px]">
 
           {/* LOGO (sized to fit inside the header without adding height) */}
           <Link
@@ -109,13 +159,13 @@ export default function Navbar() {
               src="/logo.png"
               alt="Mulberries"
               className="
-                -ml-3
-                h-[76px]
-                w-[76px]
+                -ml-4
+                h-24
+                w-24
                 object-contain
                 sm:-ml-4
-                sm:h-24
-                sm:w-24
+                sm:h-[104px]
+                sm:w-[104px]
                 lg:-ml-5
                 lg:h-28
                 lg:w-28
@@ -419,29 +469,59 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* LOGIN BUTTON (desktop / tablet) */}
-            <Link
-              href="/auth/login"
-              className="
-                ml-2
-                hidden
-                h-10
-                items-center
-                justify-center
-                rounded-full
-                bg-[#171717]
-                px-5
-                text-[13px]
-                font-medium
-                text-white
-                transition-colors
-                duration-200
-                hover:bg-[#c73572]
-                sm:flex
-              "
+            {/* LOGIN / LOGOUT BUTTON (desktop / tablet) */}
+            <div
+              className={`ml-2 hidden sm:block ${
+                authChecked ? "" : "invisible"
+              }`}
             >
-              Login
-            </Link>
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="
+                    flex
+                    h-10
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-neutral-300
+                    px-5
+                    text-[13px]
+                    font-medium
+                    text-[#171717]
+                    transition-colors
+                    duration-200
+                    hover:border-[#171717]
+                    hover:bg-neutral-50
+                  "
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="
+                    flex
+                    h-10
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[#171717]
+                    px-5
+                    text-[13px]
+                    font-medium
+                    text-white
+                    transition-colors
+                    duration-200
+                    hover:bg-[#c73572]
+                  "
+                >
+                  Login
+                </Link>
+              )}
+            </div>
 
             {/* MOBILE MENU */}
             <button
@@ -488,7 +568,7 @@ export default function Navbar() {
 
       {/* =====================================================
           6. MOBILE MENU
-          top offset = announcement bar (36px) + header (72px) + border (1px)
+          top offset = announcement bar (36px) + header (80px) + border (1px)
       ===================================================== */}
 
       {mobileMenuOpen && (
@@ -497,7 +577,7 @@ export default function Navbar() {
             fixed
             inset-x-0
             bottom-0
-            top-[109px]
+            top-[117px]
             z-40
             overflow-y-auto
             border-b
@@ -659,31 +739,57 @@ export default function Navbar() {
             </div>
 
             {/* =================================================
-                MOBILE LOGIN
+                MOBILE LOGIN / LOGOUT
             ================================================= */}
 
-            <Link
-              href="/auth/login"
-              onClick={closeMobileMenu}
-              className="
-                mt-2
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-lg
-                border
-                border-[#c73572]
-                py-3
-                text-xs
-                font-medium
-                text-[#c73572]
-                transition
-                hover:bg-[#fbf0f5]
-              "
-            >
-              Login
-            </Link>
+            {isLoggedIn ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="
+                  mt-2
+                  flex
+                  w-full
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-lg
+                  border
+                  border-neutral-300
+                  py-3
+                  text-xs
+                  font-medium
+                  text-[#171717]
+                  transition
+                  hover:bg-neutral-50
+                "
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/auth/login"
+                onClick={closeMobileMenu}
+                className="
+                  mt-2
+                  flex
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-lg
+                  border
+                  border-[#c73572]
+                  py-3
+                  text-xs
+                  font-medium
+                  text-[#c73572]
+                  transition
+                  hover:bg-[#fbf0f5]
+                "
+              >
+                Login
+              </Link>
+            )}
 
             {/* =================================================
                 MOBILE BAG

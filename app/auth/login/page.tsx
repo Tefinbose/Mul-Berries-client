@@ -82,6 +82,9 @@ export default function LoginPage() {
         JSON.stringify(response.user)
       );
 
+      // Tell the navbar the user is now logged in
+      window.dispatchEvent(new Event("auth-change"));
+
       // ==========================================
       // ROLE-BASED REDIRECT
       // ==========================================
