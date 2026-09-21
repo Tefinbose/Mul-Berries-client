@@ -113,7 +113,7 @@ type AnalyticsResponse = {
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
+  "https://mull-berries-server.onrender.com/api";
 
 const getToken = () => {
   if (typeof window === "undefined") {

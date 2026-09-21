@@ -17,7 +17,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://mull-berries-server.onrender.com/api";
 
 type OrderStatus =
   | "pending"

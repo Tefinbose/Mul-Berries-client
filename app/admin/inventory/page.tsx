@@ -16,7 +16,11 @@ import {
 } from "lucide-react";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://mull-berries-server.onrender.com/api";
+
+  // Update the API URL for production
+  // Fallback to the local server if not in production
 
 type StockStatus = "In Stock" | "Low Stock" | "Out of Stock";
 
