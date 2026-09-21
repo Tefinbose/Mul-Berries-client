@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Plus,
   Search,
@@ -12,33 +17,189 @@ import {
   Package,
   AlertTriangle,
   X,
+  RefreshCw,
 } from "lucide-react";
 
-import { products } from "@/lib/products";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000/api";
+
+/* =========================================================
+   TYPES
+========================================================= */
+
+interface ProductVariant {
+  name: string;
+  sku: string;
+  price?: number;
+  stock: number;
+  attributes?: Record<string, string>;
+}
+
+interface ProductCategory {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  compareAtPrice?: number;
+  category: ProductCategory;
+  images: string[];
+  variants: ProductVariant[];
+  stock: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function AdminProductsPage() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [stockFilter, setStockFilter] = useState("All");
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [products, setProducts] =
+    useState<Product[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [search, setSearch] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("All");
+
+  const [stockFilter, setStockFilter] =
+    useState("All");
+
+  const [openMenu, setOpenMenu] =
+    useState<string | null>(null);
+
+  /* =======================================================
+     GET TOKEN
+  ======================================================= */
+
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken")
+    );
+  };
+
+  /* =======================================================
+     FETCH PRODUCTS
+  ======================================================= */
+
+  const fetchProducts = async (
+    showRefresh = false
+  ) => {
+    try {
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/products`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Failed to fetch products"
+        );
+      }
+
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error(
+        "FETCH PRODUCTS ERROR:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch products"
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  /* =======================================================
+     CATEGORIES
+  ======================================================= */
 
   const categories = useMemo(() => {
-    return ["All", ...new Set(products.map((product) => product.category))];
-  }, []);
+    const uniqueCategories =
+      Array.from(
+        new Set(
+          products
+            .map(
+              (product) =>
+                product.category?.name
+            )
+            .filter(Boolean)
+        )
+      );
+
+    return ["All", ...uniqueCategories];
+  }, [products]);
+
+  /* =======================================================
+     FILTER PRODUCTS
+  ======================================================= */
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      const categoryName =
+        product.category?.name || "";
+
       const matchesSearch =
-        product.name.toLowerCase().includes(search.toLowerCase()) ||
-        product.category.toLowerCase().includes(search.toLowerCase());
+        product.name
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        categoryName
+          .toLowerCase()
+          .includes(search.toLowerCase());
 
       const matchesCategory =
-        category === "All" || product.category === category;
+        category === "All" ||
+        categoryName === category;
 
-      const totalStock = product.variants.reduce(
-        (total, variant) => total + variant.stock,
-        0
-      );
+      const totalStock =
+        Number(product.stock) || 0;
 
       let matchesStock = true;
 
@@ -47,46 +208,61 @@ export default function AdminProductsPage() {
       }
 
       if (stockFilter === "Low Stock") {
-        matchesStock = totalStock > 0 && totalStock <= 5;
+        matchesStock =
+          totalStock > 0 &&
+          totalStock <= 5;
       }
 
       if (stockFilter === "Out of Stock") {
         matchesStock = totalStock === 0;
       }
 
-      return matchesSearch && matchesCategory && matchesStock;
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStock
+      );
     });
-  }, [search, category, stockFilter]);
+  }, [
+    products,
+    search,
+    category,
+    stockFilter,
+  ]);
 
-  const totalProducts = products.length;
+  /* =======================================================
+     SUMMARY
+  ======================================================= */
 
-  const totalStock = products.reduce((total, product) => {
-    return (
+  const totalProducts =
+    products.length;
+
+  const totalStock = products.reduce(
+    (total, product) =>
       total +
-      product.variants.reduce(
-        (variantTotal, variant) => variantTotal + variant.stock,
-        0
-      )
-    );
-  }, 0);
+      (Number(product.stock) || 0),
+    0
+  );
 
-  const lowStockProducts = products.filter((product) => {
-    const stock = product.variants.reduce(
-      (total, variant) => total + variant.stock,
-      0
-    );
+  const lowStockProducts =
+    products.filter((product) => {
+      const stock =
+        Number(product.stock) || 0;
 
-    return stock > 0 && stock <= 5;
-  }).length;
+      return stock > 0 && stock <= 5;
+    }).length;
 
-  const outOfStockProducts = products.filter((product) => {
-    const stock = product.variants.reduce(
-      (total, variant) => total + variant.stock,
-      0
-    );
+  const outOfStockProducts =
+    products.filter((product) => {
+      const stock =
+        Number(product.stock) || 0;
 
-    return stock === 0;
-  }).length;
+      return stock === 0;
+    }).length;
+
+  /* =======================================================
+     CLEAR FILTERS
+  ======================================================= */
 
   const clearFilters = () => {
     setSearch("");
@@ -95,11 +271,159 @@ export default function AdminProductsPage() {
   };
 
   const hasFilters =
-    search !== "" || category !== "All" || stockFilter !== "All";
+    search !== "" ||
+    category !== "All" ||
+    stockFilter !== "All";
+
+  /* =======================================================
+     DELETE PRODUCT
+  ======================================================= */
+
+  const handleDeleteProduct = async (
+    product: Product
+  ) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${product.name}"?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const token = getToken();
+
+      if (!token) {
+        alert(
+          "Authentication token not found. Please login again."
+        );
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/products/${product._id}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Failed to delete product"
+        );
+      }
+
+      setProducts((current) =>
+        current.filter(
+          (item) =>
+            item._id !== product._id
+        )
+      );
+
+      setOpenMenu(null);
+
+      alert(
+        "Product deleted successfully."
+      );
+    } catch (err) {
+      console.error(
+        "DELETE PRODUCT ERROR:",
+        err
+      );
+
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete product"
+      );
+    }
+  };
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-neutral-50">
+        <div className="border-b border-neutral-200 bg-white">
+          <div className="mx-auto max-w-7xl px-6 py-7 lg:px-8">
+            <div className="h-8 w-32 animate-pulse rounded bg-neutral-200" />
+
+            <div className="mt-2 h-4 w-72 animate-pulse rounded bg-neutral-200" />
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-7xl space-y-6 px-6 py-8 lg:px-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="h-32 animate-pulse rounded-xl bg-neutral-200"
+                />
+              )
+            )}
+          </div>
+
+          <div className="h-96 animate-pulse rounded-xl bg-neutral-200" />
+        </div>
+      </main>
+    );
+  }
+
+  /* =======================================================
+     ERROR
+  ======================================================= */
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-neutral-50">
+        <div className="mx-auto flex min-h-[70vh] max-w-md items-center justify-center px-6">
+          <div className="w-full rounded-xl border border-red-200 bg-white p-8 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+              <AlertTriangle
+                size={22}
+                className="text-red-600"
+              />
+            </div>
+
+            <h2 className="mt-4 font-semibold text-neutral-950">
+              Failed to load products
+            </h2>
+
+            <p className="mt-2 text-sm text-neutral-500">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                fetchProducts(true)
+              }
+              className="mt-5 rounded-lg bg-neutral-950 px-5 py-2.5 text-sm font-medium text-white"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <main className="min-h-screen bg-neutral-50">
       {/* Header */}
+
       <div className="border-b border-neutral-200 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-7 lg:px-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -113,36 +437,65 @@ export default function AdminProductsPage() {
               </p>
             </div>
 
-            <Link
-              href="/admin/products/new"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
-            >
-              <Plus size={18} />
-              Add Product
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  fetchProducts(true)
+                }
+                disabled={refreshing}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 disabled:opacity-50"
+              >
+                <RefreshCw
+                  size={17}
+                  className={
+                    refreshing
+                      ? "animate-spin"
+                      : ""
+                  }
+                />
+
+                Refresh
+              </button>
+
+              <Link
+                href="/admin/products/new"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
+              >
+                <Plus size={18} />
+                Add Product
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8 lg:px-8">
         {/* Summary cards */}
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard
             title="Total Products"
             value={totalProducts}
-            icon={<Package size={19} />}
+            icon={
+              <Package size={19} />
+            }
           />
 
           <SummaryCard
             title="Total Stock"
             value={totalStock}
-            icon={<Package size={19} />}
+            icon={
+              <Package size={19} />
+            }
           />
 
           <SummaryCard
             title="Low Stock"
             value={lowStockProducts}
-            icon={<AlertTriangle size={19} />}
+            icon={
+              <AlertTriangle size={19} />
+            }
           />
 
           <SummaryCard
@@ -153,9 +506,9 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Filters */}
+
         <section className="rounded-xl border border-neutral-200 bg-white">
           <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
-            {/* Search */}
             <div className="relative flex-1">
               <Search
                 size={18}
@@ -166,37 +519,60 @@ export default function AdminProductsPage() {
                 type="text"
                 placeholder="Search products..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
                 className="h-11 w-full rounded-lg border border-neutral-200 bg-white pl-10 pr-4 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-950"
               />
             </div>
 
-            {/* Category */}
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) =>
+                setCategory(e.target.value)
+              }
               className="h-11 rounded-lg border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none focus:border-neutral-950"
             >
-              {categories.map((item) => (
-                <option key={item} value={item}>
-                  {item === "All" ? "All Categories" : item}
-                </option>
-              ))}
+              {categories.map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item === "All"
+                      ? "All Categories"
+                      : item}
+                  </option>
+                )
+              )}
             </select>
 
-            {/* Stock */}
             <select
               value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value)}
+              onChange={(e) =>
+                setStockFilter(
+                  e.target.value
+                )
+              }
               className="h-11 rounded-lg border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none focus:border-neutral-950"
             >
-              <option value="All">All Stock</option>
-              <option value="In Stock">In Stock</option>
-              <option value="Low Stock">Low Stock</option>
-              <option value="Out of Stock">Out of Stock</option>
+              <option value="All">
+                All Stock
+              </option>
+
+              <option value="In Stock">
+                In Stock
+              </option>
+
+              <option value="Low Stock">
+                Low Stock
+              </option>
+
+              <option value="Out of Stock">
+                Out of Stock
+              </option>
             </select>
 
-            {/* Clear */}
             {hasFilters && (
               <button
                 type="button"
@@ -210,6 +586,7 @@ export default function AdminProductsPage() {
         </section>
 
         {/* Products table */}
+
         <section className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
           <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
             <div>
@@ -218,13 +595,19 @@ export default function AdminProductsPage() {
               </h2>
 
               <p className="mt-1 text-xs text-neutral-500">
-                {filteredProducts.length} product
-                {filteredProducts.length !== 1 ? "s" : ""} found
+                {filteredProducts.length}{" "}
+                product
+                {filteredProducts.length !==
+                1
+                  ? "s"
+                  : ""}{" "}
+                found
               </p>
             </div>
           </div>
 
-          {/* Desktop table */}
+          {/* Desktop */}
+
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead>
@@ -252,189 +635,278 @@ export default function AdminProductsPage() {
               </thead>
 
               <tbody>
-                {filteredProducts.map((product) => {
-                  const stock = product.variants.reduce(
-                    (total, variant) => total + variant.stock,
-                    0
-                  );
+                {filteredProducts.map(
+                  (product) => {
+                    const stock =
+                      Number(
+                        product.stock
+                      ) || 0;
 
-                  return (
-                    <tr
-                      key={product.slug}
-                      className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                    >
-                      {/* Product */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                            <Image
-                              src={product.image}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
-                            />
-                          </div>
+                    const image =
+                      product.images?.[0] ||
+                      "/placeholder.png";
 
-                          <div>
-                            <p className="max-w-xs font-medium text-neutral-950">
-                              {product.name}
-                            </p>
+                    return (
+                      <tr
+                        key={product._id}
+                        className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                              <Image
+                                src={image}
+                                alt={
+                                  product.name
+                                }
+                                fill
+                                className="object-cover"
+                                sizes="48px"
+                              />
+                            </div>
 
-                            <p className="mt-1 text-xs text-neutral-400">
-                              {product.variants.length} variant
-                              {product.variants.length !== 1 ? "s" : ""}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-5 py-4">
-                        <span className="text-sm text-neutral-600">
-                          {product.category}
-                        </span>
-                      </td>
-
-                      {/* Price */}
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-950">
-                            ₹{product.price.toLocaleString("en-IN")}
-                          </p>
-
-                          {product.comparePrice &&
-                            product.comparePrice > product.price && (
-                              <p className="mt-1 text-xs text-neutral-400 line-through">
-                                ₹
-                                {product.comparePrice.toLocaleString("en-IN")}
+                            <div>
+                              <p className="max-w-xs font-medium text-neutral-950">
+                                {
+                                  product.name
+                                }
                               </p>
+
+                              <p className="mt-1 text-xs text-neutral-400">
+                                {
+                                  product
+                                    .variants
+                                    .length
+                                }{" "}
+                                variant
+                                {product
+                                  .variants
+                                  .length !==
+                                1
+                                  ? "s"
+                                  : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span className="text-sm text-neutral-600">
+                            {product
+                              .category
+                              ?.name ||
+                              "Uncategorized"}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div>
+                            <p className="text-sm font-semibold text-neutral-950">
+                              ₹
+                              {product.price.toLocaleString(
+                                "en-IN"
+                              )}
+                            </p>
+
+                            {product.compareAtPrice &&
+                              product.compareAtPrice >
+                                product.price && (
+                                <p className="mt-1 text-xs text-neutral-400 line-through">
+                                  ₹
+                                  {product.compareAtPrice.toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </p>
+                              )}
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <StockBadge
+                            stock={stock}
+                          />
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="relative flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenMenu(
+                                  openMenu ===
+                                    product._id
+                                    ? null
+                                    : product._id
+                                )
+                              }
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
+                            >
+                              <MoreHorizontal
+                                size={19}
+                              />
+                            </button>
+
+                            {openMenu ===
+                              product._id && (
+                              <ActionMenu
+                                product={
+                                  product
+                                }
+                                onDelete={() =>
+                                  handleDeleteProduct(
+                                    product
+                                  )
+                                }
+                                onClose={() =>
+                                  setOpenMenu(
+                                    null
+                                  )
+                                }
+                              />
                             )}
-                        </div>
-                      </td>
-
-                      {/* Stock */}
-                      <td className="px-5 py-4">
-                        <StockBadge stock={stock} />
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-4">
-                        <div className="relative flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenMenu(
-                                openMenu === product.slug
-                                  ? null
-                                  : product.slug
-                              )
-                            }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
-                            aria-label={`Actions for ${product.name}`}
-                          >
-                            <MoreHorizontal size={19} />
-                          </button>
-
-                          {openMenu === product.slug && (
-                            <ActionMenu
-                              productSlug={product.slug}
-                              onClose={() => setOpenMenu(null)}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Mobile cards */}
+          {/* Mobile */}
+
           <div className="divide-y divide-neutral-100 md:hidden">
-            {filteredProducts.map((product) => {
-              const stock = product.variants.reduce(
-                (total, variant) => total + variant.stock,
-                0
-              );
+            {filteredProducts.map(
+              (product) => {
+                const stock =
+                  Number(
+                    product.stock
+                  ) || 0;
 
-              return (
-                <div key={product.slug} className="p-5">
-                  <div className="flex gap-4">
-                    <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
-                    </div>
+                const image =
+                  product.images?.[0] ||
+                  "/placeholder.png";
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-neutral-950">
-                            {product.name}
-                          </p>
+                return (
+                  <div
+                    key={product._id}
+                    className="p-5"
+                  >
+                    <div className="flex gap-4">
+                      <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                        <Image
+                          src={image}
+                          alt={
+                            product.name
+                          }
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                      </div>
 
-                          <p className="mt-1 text-xs text-neutral-500">
-                            {product.category}
-                          </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-neutral-950">
+                              {
+                                product.name
+                              }
+                            </p>
+
+                            <p className="mt-1 text-xs text-neutral-500">
+                              {product
+                                .category
+                                ?.name ||
+                                "Uncategorized"}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenMenu(
+                                openMenu ===
+                                  product._id
+                                  ? null
+                                  : product._id
+                              )
+                            }
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+                          >
+                            <MoreHorizontal
+                              size={18}
+                            />
+                          </button>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenMenu(
-                              openMenu === product.slug
-                                ? null
-                                : product.slug
+                        <div className="mt-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-neutral-950">
+                              ₹
+                              {product.price.toLocaleString(
+                                "en-IN"
+                              )}
+                            </p>
+
+                            <p className="mt-1 text-xs text-neutral-400">
+                              {
+                                product
+                                  .variants
+                                  .length
+                              }{" "}
+                              variant
+                              {product
+                                .variants
+                                .length !==
+                              1
+                                ? "s"
+                                : ""}
+                            </p>
+                          </div>
+
+                          <StockBadge
+                            stock={stock}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {openMenu ===
+                      product._id && (
+                      <div className="mt-4">
+                        <ActionMenu
+                          product={product}
+                          onDelete={() =>
+                            handleDeleteProduct(
+                              product
                             )
                           }
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
-                          aria-label={`Actions for ${product.name}`}
-                        >
-                          <MoreHorizontal size={18} />
-                        </button>
+                          onClose={() =>
+                            setOpenMenu(
+                              null
+                            )
+                          }
+                        />
                       </div>
-
-                      <div className="mt-4 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-950">
-                            ₹{product.price.toLocaleString("en-IN")}
-                          </p>
-
-                          <p className="mt-1 text-xs text-neutral-400">
-                            {product.variants.length} variant
-                            {product.variants.length !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-
-                        <StockBadge stock={stock} />
-                      </div>
-                    </div>
+                    )}
                   </div>
-
-                  {openMenu === product.slug && (
-                    <div className="mt-4">
-                      <ActionMenu
-                        productSlug={product.slug}
-                        onClose={() => setOpenMenu(null)}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              }
+            )}
           </div>
 
-          {/* Empty state */}
-          {filteredProducts.length === 0 && (
+          {/* Empty */}
+
+          {filteredProducts.length ===
+            0 && (
             <div className="px-6 py-16 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-                <Search size={20} className="text-neutral-500" />
+                <Search
+                  size={20}
+                  className="text-neutral-500"
+                />
               </div>
 
               <h3 className="mt-4 font-medium text-neutral-950">
@@ -462,9 +934,9 @@ export default function AdminProductsPage() {
   );
 }
 
-/* ---------------------------------- */
-/* Summary Card                       */
-/* ---------------------------------- */
+/* =========================================================
+   SUMMARY CARD
+========================================================= */
 
 function SummaryCard({
   title,
@@ -478,7 +950,9 @@ function SummaryCard({
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-5">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-neutral-500">{title}</p>
+        <p className="text-sm text-neutral-500">
+          {title}
+        </p>
 
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
           {icon}
@@ -492,11 +966,15 @@ function SummaryCard({
   );
 }
 
-/* ---------------------------------- */
-/* Stock Badge                        */
-/* ---------------------------------- */
+/* =========================================================
+   STOCK BADGE
+========================================================= */
 
-function StockBadge({ stock }: { stock: number }) {
+function StockBadge({
+  stock,
+}: {
+  stock: number;
+}) {
   if (stock === 0) {
     return (
       <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
@@ -520,21 +998,23 @@ function StockBadge({ stock }: { stock: number }) {
   );
 }
 
-/* ---------------------------------- */
-/* Action Menu                        */
-/* ---------------------------------- */
+/* =========================================================
+   ACTION MENU
+========================================================= */
 
 function ActionMenu({
-  productSlug,
+  product,
+  onDelete,
   onClose,
 }: {
-  productSlug: string;
+  product: Product;
+  onDelete: () => void;
   onClose: () => void;
 }) {
   return (
-    <div className="absolute right-0 top-10 z-20 w-40 rounded-lg border border-neutral-200 bg-white p-1.5 shadow-lg md:w-44">
+    <div className="absolute right-0 top-10 z-20 w-44 rounded-lg border border-neutral-200 bg-white p-1.5 shadow-lg">
       <Link
-        href={`/admin/products/${productSlug}/edit`}
+        href={`/admin/products/${product.slug}/edit`}
         onClick={onClose}
         className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-neutral-100"
       >
@@ -544,10 +1024,7 @@ function ActionMenu({
 
       <button
         type="button"
-        onClick={() => {
-          onClose();
-          alert("Delete functionality will be connected to the backend later.");
-        }}
+        onClick={onDelete}
         className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
       >
         <Trash2 size={15} />

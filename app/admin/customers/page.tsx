@@ -1,201 +1,269 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
-  MoreHorizontal,
-  Eye,
-  Ban,
-  UserCheck,
-  Users,
-  ShoppingBag,
-  IndianRupee,
-  X,
+  User,
   Mail,
   Phone,
-  CalendarDays,
+  ShoppingBag,
+  IndianRupee,
+  UserCheck,
+  UserX,
+  RefreshCw,
+  Loader2,
+  Eye,
 } from "lucide-react";
 
-type CustomerStatus = "Active" | "Blocked";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000/api";
 
 type Customer = {
-  id: string;
+  _id: string;
   name: string;
   email: string;
-  phone: string;
-  status: CustomerStatus;
-  orders: number;
+  phone?: string;
+
+  role: string;
+
+  isActive: boolean;
+
+  createdAt: string;
+  updatedAt?: string;
+
+  orderCount: number;
   totalSpent: number;
-  joinedAt: string;
-  lastOrder: string;
+  lastOrder?: string | null;
 };
 
-const initialCustomers: Customer[] = [
-  {
-    id: "CUS001",
-    name: "Anjali Menon",
-    email: "anjali@example.com",
-    phone: "+91 98765 43210",
-    status: "Active",
-    orders: 8,
-    totalSpent: 58490,
-    joinedAt: "12 Jan 2026",
-    lastOrder: "10 Sep 2026",
-  },
-  {
-    id: "CUS002",
-    name: "Rahul Nair",
-    email: "rahul@example.com",
-    phone: "+91 91234 56789",
-    status: "Active",
-    orders: 5,
-    totalSpent: 32450,
-    joinedAt: "25 Feb 2026",
-    lastOrder: "9 Sep 2026",
-  },
-  {
-    id: "CUS003",
-    name: "Meera Krishnan",
-    email: "meera@example.com",
-    phone: "+91 99887 66554",
-    status: "Active",
-    orders: 12,
-    totalSpent: 92600,
-    joinedAt: "5 Nov 2025",
-    lastOrder: "8 Sep 2026",
-  },
-  {
-    id: "CUS004",
-    name: "Arjun Kumar",
-    email: "arjun@example.com",
-    phone: "+91 90000 11223",
-    status: "Blocked",
-    orders: 2,
-    totalSpent: 11998,
-    joinedAt: "18 Mar 2026",
-    lastOrder: "22 Jul 2026",
-  },
-  {
-    id: "CUS005",
-    name: "Diya Thomas",
-    email: "diya@example.com",
-    phone: "+91 94444 55667",
-    status: "Active",
-    orders: 6,
-    totalSpent: 41890,
-    joinedAt: "2 Apr 2026",
-    lastOrder: "6 Sep 2026",
-  },
-  {
-    id: "CUS006",
-    name: "Vishnu Raj",
-    email: "vishnu@example.com",
-    phone: "+91 87777 88990",
-    status: "Active",
-    orders: 3,
-    totalSpent: 21497,
-    joinedAt: "14 May 2026",
-    lastOrder: "1 Sep 2026",
-  },
-  {
-    id: "CUS007",
-    name: "Sneha Joseph",
-    email: "sneha@example.com",
-    phone: "+91 96666 77889",
-    status: "Active",
-    orders: 9,
-    totalSpent: 67340,
-    joinedAt: "20 Jun 2025",
-    lastOrder: "30 Aug 2026",
-  },
-  {
-    id: "CUS008",
-    name: "Adithya Menon",
-    email: "adithya@example.com",
-    phone: "+91 95555 44332",
-    status: "Active",
-    orders: 4,
-    totalSpent: 28796,
-    joinedAt: "11 Jul 2026",
-    lastOrder: "28 Aug 2026",
-  },
-];
+function getToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
 
-function formatPrice(price: number) {
-  return `₹${price.toLocaleString("en-IN")}`;
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken")
+  );
+}
+
+function formatPrice(amount: number) {
+  return `₹${Number(amount || 0).toLocaleString(
+    "en-IN"
+  )}`;
+}
+
+function formatDate(date?: string | null) {
+  if (!date) {
+    return "No orders";
+  }
+
+  return new Date(date).toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
 }
 
 export default function AdminCustomersPage() {
-  const [customers, setCustomers] =
-    useState<Customer[]>(initialCustomers);
+  const [customers, setCustomers] = useState<Customer[]>(
+    []
+  );
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "All" | CustomerStatus
-  >("All");
+  const [loading, setLoading] =
+    useState(true);
 
-  const [selectedCustomer, setSelectedCustomer] =
-    useState<Customer | null>(null);
+  const [error, setError] =
+    useState("");
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter((customer) => {
-      const searchText = search.toLowerCase();
+  const [search, setSearch] =
+    useState("");
 
-      const matchesSearch =
-        customer.name.toLowerCase().includes(searchText) ||
-        customer.email.toLowerCase().includes(searchText) ||
-        customer.phone.toLowerCase().includes(searchText) ||
-        customer.id.toLowerCase().includes(searchText);
+  const [updatingCustomerId, setUpdatingCustomerId] =
+    useState<string | null>(null);
 
-      const matchesStatus =
-        statusFilter === "All" ||
-        customer.status === statusFilter;
+  async function fetchCustomers() {
+    try {
+      setLoading(true);
+      setError("");
 
-      return matchesSearch && matchesStatus;
+      const token = getToken();
+
+      if (!token) {
+        throw new Error(
+          "Authentication required. Please login again."
+        );
+      }
+
+      const response = await fetch(
+        `${API_URL}/admin/customers`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            "Failed to fetch customers"
+        );
+      }
+
+      setCustomers(
+        Array.isArray(data?.customers)
+          ? data.customers
+          : []
+      );
+    } catch (err: any) {
+      console.error(
+        "FETCH CUSTOMERS ERROR:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Failed to load customers."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  async function toggleCustomerStatus(
+    customer: Customer
+  ) {
+    try {
+      setUpdatingCustomerId(
+        customer._id
+      );
+
+      setError("");
+
+      const token = getToken();
+
+      if (!token) {
+        throw new Error(
+          "Authentication required. Please login again."
+        );
+      }
+
+      const newStatus =
+        !customer.isActive;
+
+      const response = await fetch(
+        `${API_URL}/admin/customers/${customer._id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            isActive: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            "Failed to update customer status"
+        );
+      }
+
+      setCustomers((currentCustomers) =>
+        currentCustomers.map((item) =>
+          item._id === customer._id
+            ? {
+                ...item,
+                isActive: newStatus,
+              }
+            : item
+        )
+      );
+    } catch (err: any) {
+      console.error(
+        "UPDATE CUSTOMER STATUS ERROR:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Failed to update customer status."
+      );
+    } finally {
+      setUpdatingCustomerId(null);
+    }
+  }
+
+  const filteredCustomers =
+    customers.filter((customer) => {
+      const query =
+        search.trim().toLowerCase();
+
+      if (!query) {
+        return true;
+      }
+
+      return (
+        customer.name
+          ?.toLowerCase()
+          .includes(query) ||
+        customer.email
+          ?.toLowerCase()
+          .includes(query) ||
+        customer.phone
+          ?.toLowerCase()
+          .includes(query)
+      );
     });
-  }, [customers, search, statusFilter]);
 
-  const totalCustomers = customers.length;
+  const totalCustomers =
+    customers.length;
 
-  const activeCustomers = customers.filter(
-    (customer) => customer.status === "Active"
-  ).length;
+  const activeCustomers =
+    customers.filter(
+      (customer) => customer.isActive
+    ).length;
 
-  const blockedCustomers = customers.filter(
-    (customer) => customer.status === "Blocked"
-  ).length;
+  const blockedCustomers =
+    customers.filter(
+      (customer) => !customer.isActive
+    ).length;
 
-  const totalOrders = customers.reduce(
-    (total, customer) => total + customer.orders,
-    0
-  );
-
-  const totalRevenue = customers.reduce(
-    (total, customer) => total + customer.totalSpent,
-    0
-  );
-
-  const handleBlockToggle = (customerId: string) => {
-    setCustomers((currentCustomers) =>
-      currentCustomers.map((customer) =>
-        customer.id === customerId
-          ? {
-              ...customer,
-              status:
-                customer.status === "Active"
-                  ? "Blocked"
-                  : "Active",
-            }
-          : customer
-      )
+  const totalOrders =
+    customers.reduce(
+      (total, customer) =>
+        total +
+        Number(customer.orderCount || 0),
+      0
     );
-  };
 
-  const clearFilters = () => {
-    setSearch("");
-    setStatusFilter("All");
-  };
+  const totalRevenue =
+    customers.reduce(
+      (total, customer) =>
+        total +
+        Number(customer.totalSpent || 0),
+      0
+    );
 
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-6 sm:px-6 lg:px-8">
@@ -207,615 +275,488 @@ export default function AdminCustomersPage() {
           </h1>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Manage customers, orders and customer activity.
+            Manage your customers and view
+            their purchase activity.
           </p>
         </div>
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          title="Total Customers"
-          value={totalCustomers.toLocaleString()}
-          icon={Users}
-        />
-
-        <SummaryCard
-          title="Active Customers"
-          value={activeCustomers.toLocaleString()}
-          icon={UserCheck}
-        />
-
-        <SummaryCard
-          title="Total Orders"
-          value={totalOrders.toLocaleString()}
-          icon={ShoppingBag}
-        />
-
-        <SummaryCard
-          title="Customer Revenue"
-          value={formatPrice(totalRevenue)}
-          icon={IndianRupee}
-        />
-      </div>
-
-      {/* Filters */}
-      <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, phone or customer ID..."
-              className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
-            />
-          </div>
-
-          {/* Status */}
-          <select
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(
-                e.target.value as "All" | CustomerStatus
-              )
-            }
-            className="h-11 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none focus:border-neutral-400"
-          >
-            <option value="All">All Customers</option>
-            <option value="Active">Active</option>
-            <option value="Blocked">Blocked</option>
-          </select>
-
-          {(search || statusFilter !== "All") && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-            >
-              <X className="h-4 w-4" />
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="mt-6 hidden overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm lg:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[950px]">
-            <thead className="border-b border-neutral-100 bg-neutral-50">
-              <tr>
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Customer
-                </th>
-
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Contact
-                </th>
-
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Orders
-                </th>
-
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Total Spent
-                </th>
-
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Status
-                </th>
-
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Joined
-                </th>
-
-                <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Action
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-neutral-100">
-              {filteredCustomers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  className="transition hover:bg-neutral-50"
-                >
-                  {/* Customer */}
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <CustomerAvatar name={customer.name} />
-
-                      <div>
-                        <p className="font-medium text-neutral-900">
-                          {customer.name}
-                        </p>
-
-                        <p className="text-xs text-neutral-500">
-                          {customer.id}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Contact */}
-                  <td className="px-5 py-4">
-                    <p className="text-sm text-neutral-700">
-                      {customer.email}
-                    </p>
-
-                    <p className="mt-1 text-xs text-neutral-500">
-                      {customer.phone}
-                    </p>
-                  </td>
-
-                  {/* Orders */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm font-medium text-neutral-900">
-                      {customer.orders}
-                    </span>
-                  </td>
-
-                  {/* Total Spent */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm font-medium text-neutral-900">
-                      {formatPrice(customer.totalSpent)}
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-5 py-4">
-                    <StatusBadge status={customer.status} />
-                  </td>
-
-                  {/* Joined */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm text-neutral-600">
-                      {customer.joinedAt}
-                    </span>
-                  </td>
-
-                  {/* Action */}
-                  <td className="px-5 py-4 text-right">
-                    <CustomerActionMenu
-                      customer={customer}
-                      onView={() =>
-                        setSelectedCustomer(customer)
-                      }
-                      onBlock={() =>
-                        handleBlockToggle(customer.id)
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredCustomers.length === 0 && (
-          <EmptyState />
-        )}
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="mt-6 space-y-4 lg:hidden">
-        {filteredCustomers.map((customer) => (
-          <div
-            key={customer.id}
-            className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <CustomerAvatar name={customer.name} />
-
-                <div>
-                  <h3 className="font-medium text-neutral-900">
-                    {customer.name}
-                  </h3>
-
-                  <p className="text-xs text-neutral-500">
-                    {customer.id}
-                  </p>
-                </div>
-              </div>
-
-              <CustomerActionMenu
-                customer={customer}
-                onView={() => setSelectedCustomer(customer)}
-                onBlock={() =>
-                  handleBlockToggle(customer.id)
-                }
-              />
-            </div>
-
-            <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
-              <div className="flex items-center gap-3 text-sm text-neutral-600">
-                <Mail className="h-4 w-4 text-neutral-400" />
-                <span className="break-all">
-                  {customer.email}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 text-sm text-neutral-600">
-                <Phone className="h-4 w-4 text-neutral-400" />
-                <span>{customer.phone}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-neutral-500">
-                    Orders
-                  </p>
-
-                  <p className="mt-1 font-medium text-neutral-900">
-                    {customer.orders}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-neutral-500">
-                    Total Spent
-                  </p>
-
-                  <p className="mt-1 font-medium text-neutral-900">
-                    {formatPrice(customer.totalSpent)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <StatusBadge status={customer.status} />
-
-                <span className="text-xs text-neutral-500">
-                  Joined {customer.joinedAt}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filteredCustomers.length === 0 && <EmptyState />}
-      </div>
-
-      {/* Customer Details Modal */}
-      {selectedCustomer && (
-        <CustomerDetailsModal
-          customer={selectedCustomer}
-          onClose={() => setSelectedCustomer(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-/* -------------------------------- */
-/* Summary Card */
-/* -------------------------------- */
-
-function SummaryCard({
-  title,
-  value,
-  icon: Icon,
-}: {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-neutral-500">{title}</p>
-
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100">
-          <Icon className="h-4 w-4 text-neutral-600" />
-        </div>
-      </div>
-
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-/* -------------------------------- */
-/* Customer Avatar */
-/* -------------------------------- */
-
-function CustomerAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-700">
-      {initials}
-    </div>
-  );
-}
-
-/* -------------------------------- */
-/* Status Badge */
-/* -------------------------------- */
-
-function StatusBadge({
-  status,
-}: {
-  status: CustomerStatus;
-}) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-        status === "Active"
-          ? "bg-green-50 text-green-700"
-          : "bg-red-50 text-red-700"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
-
-/* -------------------------------- */
-/* Action Menu */
-/* -------------------------------- */
-
-function CustomerActionMenu({
-  customer,
-  onView,
-  onBlock,
-}: {
-  customer: Customer;
-  onView: () => void;
-  onBlock: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative inline-block text-left">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-neutral-100"
-      >
-        <MoreHorizontal className="h-5 w-5 text-neutral-500" />
-      </button>
-
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setOpen(false)}
+        <button
+          type="button"
+          onClick={fetchCustomers}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 disabled:opacity-50"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${
+              loading
+                ? "animate-spin"
+                : ""
+            }`}
           />
 
-          <div className="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onView();
-              }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
-            >
-              <Eye className="h-4 w-4" />
-              View Customer
-            </button>
+          Refresh
+        </button>
+      </div>
 
-            <Link
-              href={`/admin/orders?customer=${customer.id}`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              View Orders
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onBlock();
-              }}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
-                customer.status === "Active"
-                  ? "text-red-600 hover:bg-red-50"
-                  : "text-green-600 hover:bg-green-50"
-              }`}
-            >
-              {customer.status === "Active" ? (
-                <>
-                  <Ban className="h-4 w-4" />
-                  Block Customer
-                </>
-              ) : (
-                <>
-                  <UserCheck className="h-4 w-4" />
-                  Unblock Customer
-                </>
-              )}
-            </button>
-          </div>
-        </>
+      {/* Error */}
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
       )}
-    </div>
-  );
-}
 
-/* -------------------------------- */
-/* Customer Details Modal */
-/* -------------------------------- */
+      {/* Stats */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500">
+                Total Customers
+              </p>
 
-function CustomerDetailsModal({
-  customer,
-  onClose,
-}: {
-  customer: Customer;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-          <div>
-            <h2 className="font-semibold text-neutral-900">
-              Customer Details
-            </h2>
+              <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                {totalCustomers}
+              </p>
+            </div>
 
-            <p className="mt-1 text-xs text-neutral-500">
-              {customer.id}
-            </p>
+            <div className="rounded-xl bg-neutral-100 p-3">
+              <User className="h-5 w-5 text-neutral-700" />
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-neutral-100"
-          >
-            <X className="h-5 w-5 text-neutral-500" />
-          </button>
         </div>
 
-        {/* Customer */}
-        <div className="p-5">
-          <div className="flex items-center gap-4">
-            <CustomerAvatar name={customer.name} />
-
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-neutral-900">
-                {customer.name}
-              </h3>
+              <p className="text-sm text-neutral-500">
+                Active Customers
+              </p>
 
-              <StatusBadge status={customer.status} />
+              <p className="mt-2 text-2xl font-semibold text-green-600">
+                {activeCustomers}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-green-50 p-3">
+              <UserCheck className="h-5 w-5 text-green-600" />
             </div>
           </div>
+        </div>
 
-          {/* Contact */}
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-neutral-400" />
-
-              <div>
-                <p className="text-xs text-neutral-500">
-                  Email
-                </p>
-
-                <p className="text-sm text-neutral-900">
-                  {customer.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Phone className="h-4 w-4 text-neutral-400" />
-
-              <div>
-                <p className="text-xs text-neutral-500">
-                  Phone
-                </p>
-
-                <p className="text-sm text-neutral-900">
-                  {customer.phone}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <CalendarDays className="h-4 w-4 text-neutral-400" />
-
-              <div>
-                <p className="text-xs text-neutral-500">
-                  Joined
-                </p>
-
-                <p className="text-sm text-neutral-900">
-                  {customer.joinedAt}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="rounded-xl bg-neutral-50 p-4">
-              <p className="text-xs text-neutral-500">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500">
                 Total Orders
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-neutral-900">
-                {customer.orders}
+              <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                {totalOrders}
               </p>
             </div>
 
-            <div className="rounded-xl bg-neutral-50 p-4">
-              <p className="text-xs text-neutral-500">
-                Total Spent
-              </p>
-
-              <p className="mt-2 text-xl font-semibold text-neutral-900">
-                {formatPrice(customer.totalSpent)}
-              </p>
+            <div className="rounded-xl bg-blue-50 p-3">
+              <ShoppingBag className="h-5 w-5 text-blue-600" />
             </div>
           </div>
+        </div>
 
-          {/* Last Order */}
-          <div className="mt-4 rounded-xl border border-neutral-200 p-4">
-            <p className="text-xs text-neutral-500">
-              Last Order
-            </p>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500">
+                Customer Revenue
+              </p>
 
-            <p className="mt-1 text-sm font-medium text-neutral-900">
-              {customer.lastOrder}
-            </p>
-          </div>
+              <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                {formatPrice(
+                  totalRevenue
+                )}
+              </p>
+            </div>
 
-          {/* Actions */}
-          <div className="mt-6 flex gap-3">
-            <Link
-              href={`/admin/orders?customer=${customer.id}`}
-              className="flex-1 rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-neutral-800"
-            >
-              View Orders
-            </Link>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-            >
-              Close
-            </button>
+            <div className="rounded-xl bg-purple-50 p-3">
+              <IndianRupee className="h-5 w-5 text-purple-600" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* -------------------------------- */
-/* Empty State */
-/* -------------------------------- */
+      {/* Search */}
+      <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
 
-function EmptyState() {
-  return (
-    <div className="px-6 py-16 text-center">
-      <Users className="mx-auto h-10 w-10 text-neutral-300" />
+          <input
+            type="text"
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+            placeholder="Search customers by name, email or phone..."
+            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:bg-white"
+          />
+        </div>
+      </div>
 
-      <h3 className="mt-4 font-medium text-neutral-900">
-        No customers found
-      </h3>
+      {/* Loading */}
+      {loading ? (
+        <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-neutral-200 bg-white">
+          <div className="flex items-center gap-3 text-sm text-neutral-500">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading customers...
+          </div>
+        </div>
+      ) : filteredCustomers.length ===
+        0 ? (
+        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-white px-6 text-center">
+          <User className="mb-4 h-10 w-10 text-neutral-300" />
 
-      <p className="mt-1 text-sm text-neutral-500">
-        Try changing your search or filters.
-      </p>
+          <h2 className="text-lg font-semibold text-neutral-900">
+            No customers found
+          </h2>
+
+          <p className="mt-1 text-sm text-neutral-500">
+            {search
+              ? "Try a different search term."
+              : "No customer accounts are available yet."}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm lg:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1000px]">
+                <thead>
+                  <tr className="border-b border-neutral-100 bg-neutral-50">
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Customer
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Contact
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Orders
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Spent
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Last Order
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Status
+                    </th>
+
+                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-neutral-100">
+                  {filteredCustomers.map(
+                    (customer) => {
+                      const updating =
+                        updatingCustomerId ===
+                        customer._id;
+
+                      return (
+                        <tr
+                          key={
+                            customer._id
+                          }
+                          className="transition hover:bg-neutral-50"
+                        >
+                          {/* Customer */}
+                          <td className="px-5 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white">
+                                {customer.name
+                                  ?.charAt(
+                                    0
+                                  )
+                                  .toUpperCase() ||
+                                  "U"}
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-neutral-900">
+                                  {
+                                    customer.name
+                                  }
+                                </p>
+
+                                <p className="mt-0.5 text-xs text-neutral-500">
+                                  Joined{" "}
+                                  {formatDate(
+                                    customer.createdAt
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Contact */}
+                          <td className="px-5 py-5">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                <Mail className="h-3.5 w-3.5" />
+                                <span>
+                                  {
+                                    customer.email
+                                  }
+                                </span>
+                              </div>
+
+                              {customer.phone && (
+                                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                  <Phone className="h-3.5 w-3.5" />
+                                  <span>
+                                    {
+                                      customer.phone
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Orders */}
+                          <td className="px-5 py-5">
+                            <span className="font-medium text-neutral-900">
+                              {
+                                customer.orderCount
+                              }
+                            </span>
+                          </td>
+
+                          {/* Spent */}
+                          <td className="px-5 py-5">
+                            <span className="font-medium text-neutral-900">
+                              {formatPrice(
+                                customer.totalSpent
+                              )}
+                            </span>
+                          </td>
+
+                          {/* Last order */}
+                          <td className="px-5 py-5">
+                            <span className="text-sm text-neutral-600">
+                              {formatDate(
+                                customer.lastOrder
+                              )}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-5 py-5">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                customer.isActive
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-red-50 text-red-700"
+                              }`}
+                            >
+                              {customer.isActive
+                                ? "Active"
+                                : "Blocked"}
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td className="px-5 py-5">
+                            <div className="flex justify-end gap-2">
+                              <Link
+                                href={`/admin/customers/${customer._id}`}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleCustomerStatus(
+                                    customer
+                                  )
+                                }
+                                disabled={
+                                  updating
+                                }
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium disabled:opacity-50 ${
+                                  customer.isActive
+                                    ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                                    : "border border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                                }`}
+                              >
+                                {updating ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : customer.isActive ? (
+                                  <UserX className="h-3.5 w-3.5" />
+                                ) : (
+                                  <UserCheck className="h-3.5 w-3.5" />
+                                )}
+
+                                {customer.isActive
+                                  ? "Block"
+                                  : "Unblock"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile */}
+          <div className="space-y-4 lg:hidden">
+            {filteredCustomers.map(
+              (customer) => {
+                const updating =
+                  updatingCustomerId ===
+                  customer._id;
+
+                return (
+                  <div
+                    key={customer._id}
+                    className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white">
+                          {customer.name
+                            ?.charAt(0)
+                            .toUpperCase() ||
+                            "U"}
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="truncate font-semibold text-neutral-900">
+                            {
+                              customer.name
+                            }
+                          </h3>
+
+                          <p className="truncate text-xs text-neutral-500">
+                            {
+                              customer.email
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          customer.isActive
+                            ? "bg-green-50 text-green-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {customer.isActive
+                          ? "Active"
+                          : "Blocked"}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-neutral-50 p-3">
+                        <p className="text-xs text-neutral-500">
+                          Orders
+                        </p>
+
+                        <p className="mt-1 font-semibold text-neutral-900">
+                          {
+                            customer.orderCount
+                          }
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-neutral-50 p-3">
+                        <p className="text-xs text-neutral-500">
+                          Spent
+                        </p>
+
+                        <p className="mt-1 font-semibold text-neutral-900">
+                          {formatPrice(
+                            customer.totalSpent
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {customer.phone && (
+                      <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
+                        <Phone className="h-4 w-4" />
+                        {
+                          customer.phone
+                        }
+                      </div>
+                    )}
+
+                    <p className="mt-2 text-xs text-neutral-400">
+                      Last order:{" "}
+                      {formatDate(
+                        customer.lastOrder
+                      )}
+                    </p>
+
+                    <div className="mt-5 flex gap-2">
+                      <Link
+                        href={`/admin/customers/${customer._id}`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleCustomerStatus(
+                            customer
+                          )
+                        }
+                        disabled={
+                          updating
+                        }
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50 ${
+                          customer.isActive
+                            ? "bg-red-50 text-red-600 hover:bg-red-100"
+                            : "bg-green-50 text-green-700 hover:bg-green-100"
+                        }`}
+                      >
+                        {updating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : customer.isActive ? (
+                          <UserX className="h-4 w-4" />
+                        ) : (
+                          <UserCheck className="h-4 w-4" />
+                        )}
+
+                        {customer.isActive
+                          ? "Block"
+                          : "Unblock"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
