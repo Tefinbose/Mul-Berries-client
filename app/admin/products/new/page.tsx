@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -8,6 +8,8 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { API_URL } from "@/services/api";
+import { getActiveCategoriesApi } from "@/services/categoryApi";
 
 type Variant = {
   id: number;
@@ -17,12 +19,50 @@ type Variant = {
   stock: string;
 };
 
+type CategoryOption = {
+  _id: string;
+  name: string;
+};
+
 export default function AddProductPage() {
   const [productName, setProductName] = useState("");
   const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState("");
   const [comparePrice, setComparePrice] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getActiveCategoriesApi()
+      .then((response) => {
+        setCategories(
+          response.categories.map(({ _id, name }) => ({ _id, name }))
+        );
+      })
+      .catch((loadError) => {
+        console.error("LOAD PRODUCT CATEGORIES ERROR:", loadError);
+        setError("Unable to load categories.");
+      });
+  }, []);
+
+  const handleImagesChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    const validFiles = selectedFiles.filter(
+      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024
+    );
+
+    setImageFiles(validFiles.slice(0, 8));
+    setImagePreviews(
+      validFiles.slice(0, 8).map((file) => URL.createObjectURL(file))
+    );
+  };
 
   const [variants, setVariants] = useState<Variant[]>([
     {
@@ -69,23 +109,83 @@ export default function AddProductPage() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const productData = {
-      productName,
-      category,
-      description,
-      basePrice,
-      comparePrice,
-      variants,
-    };
+    try {
+      const token = localStorage.getItem("token");
 
-    console.log("Product data:", productData);
+      if (!token) {
+        throw new Error("Authentication required. Please login again.");
+      }
 
-    alert(
-      "Product form submitted. Backend connection will be added later."
-    );
+      const formData = new FormData();
+      imageFiles.forEach((file) => formData.append("images", file));
+
+      const uploadResponse = await fetch(`${API_URL}/uploads/product-images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok || !uploadData.success) {
+        throw new Error(uploadData.message || "Failed to upload images");
+      }
+
+      const slug = productName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const productResponse = await fetch(`${API_URL}/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: productName.trim(),
+          slug,
+          description: description.trim(),
+          price: Number(basePrice),
+          compareAtPrice: comparePrice ? Number(comparePrice) : undefined,
+          category,
+          images: uploadData.images.map((image: { url: string }) => image.url),
+          variants: variants.map((variant) => ({
+            name: `${variant.color} ${variant.size}`.trim(),
+            sku: `${slug}-${variant.id}`,
+            price: Number(variant.price),
+            stock: Number(variant.stock),
+            attributes: { color: variant.color, size: variant.size },
+          })),
+          stock: variants.reduce(
+            (total, variant) => total + Number(variant.stock || 0),
+            0
+          ),
+          isActive: true,
+        }),
+      });
+      const productData = await productResponse.json();
+
+      if (!productResponse.ok || !productData.success) {
+        throw new Error(productData.message || "Failed to create product");
+      }
+
+      window.location.href = "/admin/products";
+    } catch (submitError) {
+      console.error("CREATE PRODUCT ERROR:", submitError);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to create product"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -168,19 +268,11 @@ export default function AddProductPage() {
                   className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none focus:border-neutral-950"
                 >
                   <option value="">Select category</option>
-                  <option value="Silk Sarees">Silk Sarees</option>
-                  <option value="Kanjivaram Sarees">
-                    Kanjivaram Sarees
-                  </option>
-                  <option value="Banarasi Sarees">
-                    Banarasi Sarees
-                  </option>
-                  <option value="Kerala Sarees">
-                    Kerala Sarees
-                  </option>
-                  <option value="Designer Sarees">
-                    Designer Sarees
-                  </option>
+                  {categories.map((option) => (
+                    <option key={option._id} value={option._id}>
+                      {option.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -282,13 +374,24 @@ export default function AddProductPage() {
               </h2>
 
               <p className="mt-1 text-sm text-neutral-500">
-                Upload product images. Image upload will be connected
-                to Cloudinary later.
+                Upload product images to Cloudinary.
               </p>
             </div>
 
             <div className="p-6">
-              <div className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 transition hover:border-neutral-400">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                onChange={handleImagesChange}
+                className="hidden"
+              />
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 transition hover:border-neutral-400"
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
                   <ImagePlus
                     size={22}
@@ -306,11 +409,25 @@ export default function AddProductPage() {
 
                 <button
                   type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   className="mt-4 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition hover:border-neutral-950"
                 >
                   Choose Images
                 </button>
               </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {imagePreviews.map((preview, index) => (
+                    <img
+                      key={preview}
+                      src={preview}
+                      alt={`Product preview ${index + 1}`}
+                      className="aspect-square w-full rounded-lg object-cover"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -464,6 +581,12 @@ export default function AddProductPage() {
 
           {/* Actions */}
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            {error && (
+              <p className="mr-auto self-center text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
             <Link
               href="/admin/products"
               className="inline-flex h-12 items-center justify-center rounded-lg border border-neutral-200 bg-white px-6 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950"
@@ -473,9 +596,10 @@ export default function AddProductPage() {
 
             <button
               type="submit"
+              disabled={loading}
               className="inline-flex h-12 items-center justify-center rounded-lg bg-neutral-950 px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
             >
-              Create Product
+              {loading ? "Creating..." : "Create Product"}
             </button>
           </div>
         </form>
