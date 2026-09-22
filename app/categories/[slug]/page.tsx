@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { products } from "@/lib/products";
+import { getCategoryBySlugApi } from "@/services/categoryApi";
 
 const categoryInfo: Record<
   string,
@@ -98,7 +99,22 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params;
 
-  const category = categoryInfo[slug];
+  let category = categoryInfo[slug];
+
+  try {
+    const response = await getCategoryBySlugApi(slug);
+
+    if (response.success && response.category) {
+      category = {
+        name: response.category.name,
+        description:
+          response.category.description ||
+          `Explore our ${response.category.name.toLowerCase()} collection.`,
+      };
+    }
+  } catch (error) {
+    console.error("LOAD CATEGORY ERROR:", error);
+  }
 
   if (!category) {
     return (

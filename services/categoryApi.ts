@@ -1,19 +1,38 @@
 import { apiRequest } from "./api";
 
+export interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  isActive: boolean;
+}
+
+export interface CategoriesResponse {
+  success: boolean;
+  count: number;
+  categories: Category[];
+}
+
 export const getCategoriesApi = () => {
-  return apiRequest("/categories");
+  return apiRequest<CategoriesResponse>("/categories");
 };
 
 export const getActiveCategoriesApi = () => {
-  return apiRequest("/categories/active");
+  return apiRequest<CategoriesResponse>("/categories/active");
 };
 
 export const getCategoryByIdApi = (id: string) => {
-  return apiRequest(`/categories/id/${id}`);
+  return apiRequest<{ success: boolean; category: Category }>(
+    `/categories/id/${id}`
+  );
 };
 
 export const getCategoryBySlugApi = (slug: string) => {
-  return apiRequest(`/categories/${slug}`);
+  return apiRequest<{ success: boolean; category: Category }>(
+    `/categories/${slug}`
+  );
 };
 
 export const createCategoryApi = (

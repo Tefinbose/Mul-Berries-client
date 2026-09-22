@@ -2,122 +2,119 @@
 
 import Link from "next/link";
 import { Heart, Trash2, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  getWishlistApi,
+  removeFromWishlistApi,
+  type WishlistProduct,
+} from "@/services/wishlistApi";
 
-const initialWishlist = [
-  {
-    id: 1,
-    name: "Classic Linen Shirt",
-    category: "Men",
-    price: 1499,
-    oldPrice: 1999,
-    image:
-      "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80",
-    slug: "classic-linen-shirt",
-  },
-  {
-    id: 2,
-    name: "Leather Handbag",
-    category: "Women",
-    price: 2499,
-    oldPrice: 3499,
-    image:
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80",
-    slug: "leather-handbag",
-  },
-  {
-    id: 3,
-    name: "Ceramic Vase",
-    category: "Home & Living",
-    price: 1299,
-    oldPrice: 1899,
-    image:
-      "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80",
-    slug: "ceramic-vase",
-  },
-  {
-    id: 4,
-    name: "Silk Designer Saree",
-    category: "Women",
-    price: 4499,
-    oldPrice: 5999,
-    image:
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
-    slug: "silk-designer-saree",
-  },
-  {
-    id: 5,
-    name: "Cotton Kurta Set",
-    category: "Women",
-    price: 1899,
-    oldPrice: 2499,
-    image:
-      "https://images.unsplash.com/photo-1583391733956-6c78276477e2?auto=format&fit=crop&w=800&q=80",
-    slug: "cotton-kurta-set",
-  },
-  {
-    id: 6,
-    name: "Premium Leather Shoes",
-    category: "Men",
-    price: 2999,
-    oldPrice: 3999,
-    image:
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80",
-    slug: "premium-leather-shoes",
-  },
-  {
-    id: 7,
-    name: "Minimal Ceramic Pot",
-    category: "Home & Living",
-    price: 999,
-    oldPrice: 1499,
-    image:
-      "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=800&q=80",
-    slug: "minimal-ceramic-pot",
-  },
-  {
-    id: 8,
-    name: "Elegant Shoulder Bag",
-    category: "Women",
-    price: 2199,
-    oldPrice: 2999,
-    image:
-      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=800&q=80",
-    slug: "elegant-shoulder-bag",
-  },
-  {
-    id: 9,
-    name: "Classic Casual Shirt",
-    category: "Men",
-    price: 1399,
-    oldPrice: 1899,
-    image:
-      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
-    slug: "classic-casual-shirt",
-  },
-  {
-    id: 10,
-    name: "Handwoven Saree",
-    category: "Women",
-    price: 3899,
-    oldPrice: 4999,
-    image:
-      "https://images.unsplash.com/photo-1610189012906-4c4c0c6f7b52?auto=format&fit=crop&w=800&q=80",
-    slug: "handwoven-saree",
-  },
-];
+type WishlistCard = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  oldPrice?: number;
+  image: string;
+  slug: string;
+};
+
+function toWishlistCard(product: WishlistProduct): WishlistCard {
+  const category =
+    typeof product.category === "string"
+      ? product.category
+      : product.category?.name || "Collection";
+
+  return {
+    id: product._id,
+    name: product.name,
+    category,
+    price: product.price,
+    oldPrice: product.compareAtPrice,
+    image: product.images?.[0] || "/products/placeholder.jpg",
+    slug: product.slug,
+  };
+}
 
 export default function WishlistPage() {
-  const [wishlist, setWishlist] = useState(initialWishlist);
+  const [wishlist, setWishlist] = useState<WishlistCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const removeItem = (id: number) => {
+  useEffect(() => {
+    const loadWishlist = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await getWishlistApi(token);
+        setWishlist(
+          (response.wishlist?.products || []).map(toWishlistCard)
+        );
+      } catch (loadError) {
+        console.error("LOAD WISHLIST ERROR:", loadError);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to load wishlist"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWishlist();
+  }, []);
+
+  const removeItem = async (id: string) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        await removeFromWishlistApi(id, token);
+      } catch (removeError) {
+        console.error("REMOVE WISHLIST ITEM ERROR:", removeError);
+        setError(
+          removeError instanceof Error
+            ? removeError.message
+            : "Failed to remove wishlist item"
+        );
+        return;
+      }
+    }
+
     setWishlist((items) =>
       items.filter((item) => item.id !== id)
     );
   };
 
-  const clearWishlist = () => {
-    setWishlist([]);
+  const clearWishlist = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setWishlist([]);
+      return;
+    }
+
+    try {
+      await Promise.all(
+        wishlist.map((item) =>
+          removeFromWishlistApi(item.id, token)
+        )
+      );
+      setWishlist([]);
+    } catch (clearError) {
+      console.error("CLEAR WISHLIST ERROR:", clearError);
+      setError(
+        clearError instanceof Error
+          ? clearError.message
+          : "Failed to clear wishlist"
+      );
+    }
   };
 
   return (
@@ -151,7 +148,18 @@ export default function WishlistPage() {
 
       <section className="site-container px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
 
-        {wishlist.length > 0 ? (
+        {loading ? (
+          <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-[#e5e1da] bg-white text-sm text-neutral-500">
+            Loading your wishlist...
+          </div>
+        ) : error ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 px-6 text-center">
+            <h2 className="text-xl font-semibold text-red-800">
+              Unable to load your wishlist
+            </h2>
+            <p className="mt-2 text-sm text-red-700">{error}</p>
+          </div>
+        ) : wishlist.length > 0 ? (
           <>
 
             {/* ================================================= */}
@@ -330,9 +338,11 @@ export default function WishlistPage() {
                         ₹{product.price.toLocaleString("en-IN")}
                       </span>
 
-                      <span className="text-[9px] text-neutral-400 line-through sm:text-[10px]">
-                        ₹{product.oldPrice.toLocaleString("en-IN")}
-                      </span>
+                      {product.oldPrice && (
+                        <span className="text-[9px] text-neutral-400 line-through sm:text-[10px]">
+                          ₹{product.oldPrice.toLocaleString("en-IN")}
+                        </span>
+                      )}
 
                     </div>
 

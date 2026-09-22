@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 
 import { products } from "@/lib/products";
+import { mapApiProduct } from "@/lib/productMapper";
+import { getProductsApi } from "@/services/productApi";
 import ProductSearch from "@/components/ProductSearch";
 
 type ProductsPageProps = {
@@ -39,6 +41,16 @@ export default async function ProductsPage({
   const sortQuery = params.sort?.trim() || "";
 
   let filteredProducts = [...products];
+
+  try {
+    const response = await getProductsApi();
+
+    if (response.success && response.products.length > 0) {
+      filteredProducts = response.products.map(mapApiProduct);
+    }
+  } catch (error) {
+    console.error("LOAD PRODUCTS ERROR:", error);
+  }
 
   // Search
   if (searchQuery) {

@@ -1,11 +1,23 @@
 import { apiRequest } from "./api";
+import type { ApiProduct } from "@/lib/productMapper";
+
+export interface ProductsResponse {
+  success: boolean;
+  count: number;
+  products: ApiProduct[];
+}
+
+export interface ProductResponse {
+  success: boolean;
+  product: ApiProduct;
+}
 
 export const getProductsApi = (query = "") => {
-  return apiRequest(`/products${query}`);
+  return apiRequest<ProductsResponse>(`/products${query}`);
 };
 
 export const getProductBySlugApi = (slug: string) => {
-  return apiRequest(`/products/${slug}`);
+  return apiRequest<ProductResponse>(`/products/${slug}`);
 };
 
 export const createProductApi = (

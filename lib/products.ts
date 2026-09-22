@@ -1,5 +1,6 @@
 export type ProductVariant = {
   id: string;
+  sku?: string;
   color: string;
   size: string;
   price: number;
@@ -7,10 +8,12 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  _id?: string;
   slug: string;
   name: string;
   category: string;
   price: number;
+  stock?: number;
   comparePrice?: number;
   image: string;
   description: string;

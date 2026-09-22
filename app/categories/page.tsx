@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { getActiveCategoriesApi } from "@/services/categoryApi";
 
-const categories = [
+const fallbackCategories = [
   {
     name: "Sarees",
     slug: "sarees",
@@ -34,7 +35,36 @@ const categories = [
   },
 ];
 
-export default function CategoriesPage() {
+type CategoryCard = (typeof fallbackCategories)[number];
+
+async function getCategories(): Promise<CategoryCard[]> {
+  try {
+    const response = await getActiveCategoriesApi();
+
+    if (!response.success || response.categories.length === 0) {
+      return fallbackCategories;
+    }
+
+    return response.categories.map((category) => {
+      const fallback = fallbackCategories.find(
+        (item) => item.slug === category.slug
+      );
+
+      return {
+        name: category.name,
+        slug: category.slug,
+        image: category.image || fallback?.image || "/categories/sarees.jpg",
+      };
+    });
+  } catch (error) {
+    console.error("LOAD CATEGORIES ERROR:", error);
+    return fallbackCategories;
+  }
+}
+
+export default async function CategoriesPage() {
+  const categories = await getCategories();
+
   return (
     <main className="min-h-screen w-full bg-[#f1f3f6]">
       {/* Breadcrumb */}

@@ -17,6 +17,8 @@ import {
   getProductBySlug,
   products,
 } from "@/lib/products";
+import { mapApiProduct } from "@/lib/productMapper";
+import { getProductBySlugApi } from "@/services/productApi";
 
 type ProductPageProps = {
   params: Promise<{
@@ -29,8 +31,17 @@ export default async function ProductPage({
 }: ProductPageProps) {
   const { slug } = await params;
 
-  const product =
-    getProductBySlug(slug);
+  let product = getProductBySlug(slug);
+
+  try {
+    const response = await getProductBySlugApi(slug);
+
+    if (response.success && response.product) {
+      product = mapApiProduct(response.product);
+    }
+  } catch (error) {
+    console.error("LOAD PRODUCT ERROR:", error);
+  }
 
   if (!product) {
     notFound();

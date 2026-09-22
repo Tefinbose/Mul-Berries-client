@@ -13,6 +13,13 @@ import type {
   Product,
   ProductVariant,
 } from "@/lib/products";
+import {
+  addToCartApi,
+  clearCartApi,
+  getCartApi,
+  removeFromCartApi,
+  updateCartItemApi,
+} from "@/services/cartApi";
 
 export type CartItem = {
   product: Product;
@@ -54,6 +61,40 @@ const CartContext = createContext<
 >(undefined);
 
 const CART_STORAGE_KEY = "mulberries-cart";
+let cartSyncQueue = Promise.resolve();
+
+function getToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem("token");
+}
+
+function getVariantId(variant: ProductVariant) {
+  return variant.sku || variant.id;
+}
+
+function enqueueCartSync(task: () => Promise<unknown>) {
+  const request = cartSyncQueue.then(task).catch((error: unknown) => {
+    if (
+      error instanceof Error &&
+      (error.message === "Cart item not found" ||
+        error.message === "Cart not found")
+    ) {
+      return;
+    }
+
+    console.error("CART SYNC ERROR:", error);
+  });
+
+  cartSyncQueue = request.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return request;
+}
 
 export function CartProvider({
   children,
@@ -117,6 +158,21 @@ export function CartProvider({
       return;
     }
 
+    const token = getToken();
+
+    if (token && product._id) {
+      enqueueCartSync(() =>
+        addToCartApi(
+          {
+            productId: product._id!,
+            variantId: getVariantId(variant),
+            quantity,
+          },
+          token
+        )
+      );
+    }
+
     setItems((currentItems) => {
       const existingItem =
         currentItems.find(
@@ -156,6 +212,23 @@ export function CartProvider({
     productSlug: string,
     variantId: string
   ) => {
+    const item = items.find(
+      (currentItem) =>
+        currentItem.product.slug === productSlug &&
+        currentItem.variant.id === variantId
+    );
+    const token = getToken();
+
+    if (token && item?.product._id) {
+      enqueueCartSync(() =>
+        removeFromCartApi(
+          item.product._id!,
+          token,
+          getVariantId(item.variant)
+        )
+      );
+    }
+
     setItems((currentItems) =>
       currentItems.filter(
         (item) =>
@@ -173,6 +246,49 @@ export function CartProvider({
     productSlug: string,
     variantId: string
   ) => {
+    const item = items.find(
+      (currentItem) =>
+        currentItem.product.slug === productSlug &&
+        currentItem.variant.id === variantId
+    );
+    const nextQuantity = item
+      ? Math.min(item.quantity + 1, item.variant.stock)
+      : 0;
+    const token = getToken();
+
+    if (token && item?.product._id && nextQuantity > 0) {
+      enqueueCartSync(async () => {
+        const response = await getCartApi(token);
+        const serverItem = response.cart?.items.find(
+          (cartItem) =>
+            (typeof cartItem.product === "string"
+              ? cartItem.product
+              : cartItem.product._id) === item.product!._id &&
+            cartItem.variantId === getVariantId(item.variant)
+        );
+
+        if (!serverItem) {
+          return addToCartApi(
+            {
+              productId: item.product!._id!,
+              variantId: getVariantId(item.variant),
+              quantity: 1,
+            },
+            token
+          );
+        }
+
+        return updateCartItemApi(
+          item.product!._id!,
+          {
+            quantity: serverItem.quantity + 1,
+            variantId: getVariantId(item.variant),
+          },
+          token
+        );
+      });
+    }
+
     setItems((currentItems) =>
       currentItems.map((item) => {
         if (
@@ -199,6 +315,51 @@ export function CartProvider({
     productSlug: string,
     variantId: string
   ) => {
+    const item = items.find(
+      (currentItem) =>
+        currentItem.product.slug === productSlug &&
+        currentItem.variant.id === variantId
+    );
+    const nextQuantity = item ? item.quantity - 1 : 0;
+    const token = getToken();
+
+    if (token && item?.product._id) {
+      const syncRequest =
+        enqueueCartSync(async () => {
+          const response = await getCartApi(token);
+          const serverItem = response.cart?.items.find(
+            (cartItem) =>
+              (typeof cartItem.product === "string"
+                ? cartItem.product
+                : cartItem.product._id) === item.product!._id &&
+              cartItem.variantId === getVariantId(item.variant)
+          );
+
+          if (!serverItem) {
+            return;
+          }
+
+          if (serverItem.quantity > 1) {
+            return updateCartItemApi(
+              item.product!._id!,
+              {
+                quantity: serverItem.quantity - 1,
+                variantId: getVariantId(item.variant),
+              },
+              token
+            );
+          }
+
+          return removeFromCartApi(
+            item.product!._id!,
+            token,
+            getVariantId(item.variant)
+          );
+        });
+
+      void syncRequest;
+    }
+
     setItems((currentItems) =>
       currentItems
         .map((item) => {
@@ -224,6 +385,12 @@ export function CartProvider({
 
   // Clear cart
   const clearCart = () => {
+    const token = getToken();
+
+    if (token) {
+      enqueueCartSync(() => clearCartApi(token));
+    }
+
     setItems([]);
   };
 

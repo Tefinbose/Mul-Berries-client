@@ -1,6 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -19,6 +24,11 @@ import MobileColorSelector from "@/components/MobileColorSelector";
 import MobileSizeSelector from "@/components/MobileSizeSelector";
 import MobileProductActions from "@/components/MobileProductActions";
 import { useCart } from "@/context/CartContext";
+import {
+  addToWishlistApi,
+  checkWishlistApi,
+  removeFromWishlistApi,
+} from "@/services/wishlistApi";
 
 interface ProductDetailsProps {
   product: Product;
@@ -112,6 +122,30 @@ export default function ProductDetails({
 
   const [wishlist, setWishlist] =
     useState(false);
+
+  useEffect(() => {
+    const token =
+      typeof window === "undefined"
+        ? null
+        : localStorage.getItem("token");
+
+    if (!token || !extendedProduct._id) {
+      return;
+    }
+
+    checkWishlistApi(
+      extendedProduct._id,
+      token
+    )
+      .then((response) => {
+        if (response.success) {
+          setWishlist(response.inWishlist);
+        }
+      })
+      .catch((error) => {
+        console.error("CHECK WISHLIST ERROR:", error);
+      });
+  }, [extendedProduct._id]);
 
   /*
    * ---------------------------------------------------------
@@ -318,10 +352,34 @@ export default function ProductDetails({
    * ---------------------------------------------------------
    */
 
-  const handleWishlist = () => {
-    setWishlist(
-      (current) => !current
-    );
+  const handleWishlist = async () => {
+    const token =
+      typeof window === "undefined"
+        ? null
+        : localStorage.getItem("token");
+
+    if (!token || !extendedProduct._id) {
+      setWishlist((current) => !current);
+      return;
+    }
+
+    try {
+      if (wishlist) {
+        await removeFromWishlistApi(
+          extendedProduct._id,
+          token
+        );
+      } else {
+        await addToWishlistApi(
+          extendedProduct._id,
+          token
+        );
+      }
+
+      setWishlist((current) => !current);
+    } catch (error) {
+      console.error("UPDATE WISHLIST ERROR:", error);
+    }
   };
 
   return (
