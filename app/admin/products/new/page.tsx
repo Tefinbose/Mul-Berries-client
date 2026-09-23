@@ -266,11 +266,6 @@ export default function AddProductPage() {
         );
       }
 
-      console.log(
-        "API URL:",
-        API_URL
-      );
-
       // =================================================
       // STEP 1: CREATE FORMDATA
       // =================================================
@@ -283,15 +278,6 @@ export default function AddProductPage() {
           file
         );
       });
-
-      console.log(
-        "Number of images:",
-        imageFiles.length
-      );
-
-      console.log(
-        "Uploading product images..."
-      );
 
       // =================================================
       // STEP 2: UPLOAD IMAGES
@@ -316,11 +302,6 @@ export default function AddProductPage() {
       )
         ? `${API_URL}/uploads/product-images`
         : `${API_URL}/api/uploads/product-images`;
-
-      console.log(
-        "UPLOAD URL:",
-        uploadUrl
-      );
 
       const uploadResponse =
         await fetch(uploadUrl, {
@@ -353,20 +334,6 @@ export default function AddProductPage() {
       }
 
       // =================================================
-      // DEBUG RESPONSE
-      // =================================================
-
-      console.log(
-        "UPLOAD STATUS:",
-        uploadResponse.status
-      );
-
-      console.log(
-        "UPLOAD RESPONSE:",
-        uploadData
-      );
-
-      // =================================================
       // CHECK UPLOAD
       // =================================================
 
@@ -393,11 +360,6 @@ export default function AddProductPage() {
         );
       }
 
-      console.log(
-        "CLOUDINARY IMAGES:",
-        uploadData.images
-      );
-
       // =================================================
       // GET IMAGE URLS
       // =================================================
@@ -406,11 +368,6 @@ export default function AddProductPage() {
         uploadData.images.map(
           (image) => image.url
         );
-
-      console.log(
-        "IMAGE URLS:",
-        imageUrls
-      );
 
       // =================================================
       // CREATE SLUG
@@ -491,11 +448,6 @@ export default function AddProductPage() {
         isActive: true,
       };
 
-      console.log(
-        "PRODUCT PAYLOAD:",
-        productPayload
-      );
-
       // =================================================
       // STEP 3: CREATE PRODUCT
       // =================================================
@@ -504,11 +456,6 @@ export default function AddProductPage() {
         API_URL.endsWith("/api")
           ? `${API_URL}/products`
           : `${API_URL}/api/products`;
-
-      console.log(
-        "PRODUCT URL:",
-        productUrl
-      );
 
       const productResponse =
         await fetch(productUrl, {
@@ -545,16 +492,6 @@ export default function AddProductPage() {
         );
       }
 
-      console.log(
-        "PRODUCT STATUS:",
-        productResponse.status
-      );
-
-      console.log(
-        "PRODUCT RESPONSE:",
-        productData
-      );
-
       // =================================================
       // CHECK PRODUCT CREATION
       // =================================================
@@ -573,18 +510,9 @@ export default function AddProductPage() {
       // SUCCESS
       // =================================================
 
-      console.log(
-        "PRODUCT CREATED SUCCESSFULLY"
-      );
-
       window.location.href =
         "/admin/products";
     } catch (submitError) {
-      console.error(
-        "CREATE PRODUCT ERROR:",
-        submitError
-      );
-
       setError(
         submitError instanceof Error
           ? submitError.message

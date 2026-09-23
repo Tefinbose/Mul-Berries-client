@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { API_URL } from "@/services/api";
+
 type DailySale = {
   _id: string;
   sales: number;
@@ -110,10 +112,6 @@ type AnalyticsResponse = {
 
   message?: string;
 };
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://mull-berries-server.onrender.com/api";
 
 const getToken = () => {
   if (typeof window === "undefined") {

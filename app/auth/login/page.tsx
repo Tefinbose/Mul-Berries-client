@@ -52,8 +52,6 @@ export default function LoginPage() {
     try {
       const response = await loginApi(formData);
 
-      console.log("LOGIN RESPONSE:", response);
-
       if (!response.success) {
         setError(response.message || "Login failed");
         return;
@@ -90,8 +88,6 @@ export default function LoginPage() {
       // ==========================================
 
       const role = response.user?.role;
-
-      console.log("USER ROLE:", role);
 
       if (role === "staff" || role === "superadmin") {
         // Staff and superadmin go to staff dashboard

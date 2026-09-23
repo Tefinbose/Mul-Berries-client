@@ -15,12 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://mull-berries-server.onrender.com/api";
-
-  // Update the API URL for production
-  // Fallback to the local server if not in production
+import { API_URL } from "@/services/api";
 
 type StockStatus = "In Stock" | "Low Stock" | "Out of Stock";
 

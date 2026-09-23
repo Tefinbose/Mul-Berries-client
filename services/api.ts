@@ -17,9 +17,6 @@ export async function apiRequest<T>(
 
   const url = `${baseUrl}/${cleanEndpoint}`;
 
-  console.log("API BASE URL:", API_URL);
-  console.log("API REQUEST:", url);
-
   const response = await fetch(url, {
     ...rest,
     headers: {

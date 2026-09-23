@@ -10,9 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://mull-berries-server.onrender.com/api";
+import { API_URL } from "@/services/api";
 
 type OrderItem = {
   product: string;

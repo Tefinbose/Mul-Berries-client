@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { API_URL } from "@/services/api";
+
 type Product = {
   _id: string;
   name?: string;
@@ -60,10 +62,6 @@ type InventoryUpdateResponse = {
   data?: Product;
   message?: string;
 };
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://mull-berries-server.onrender.com/api";
 
 const LOW_STOCK_LIMIT = 10;
 
