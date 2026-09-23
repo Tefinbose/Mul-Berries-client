@@ -37,7 +37,7 @@ export default function ProductCard({
       >
         <Link href={`/products/${product.slug}`}>
           <Image
-            src={product.image}
+            src={product.images?.[0] || product.image}
             alt={product.name}
             fill
             className="object-cover transition duration-500 group-hover:scale-105"

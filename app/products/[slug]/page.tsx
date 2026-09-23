@@ -47,18 +47,9 @@ export default async function ProductPage({
     notFound();
   }
 
-  /*
-   * For now the frontend product data contains
-   * one main image.
-   *
-   * When backend images are connected later,
-   * change this to:
-   *
-   * const productImages = product.images;
-   */
-  const productImages = [
-    product.image,
-  ];
+  const productImages = product.images?.length
+    ? product.images
+    : [product.image];
 
   return (
     <main

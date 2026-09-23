@@ -48,6 +48,7 @@ export function mapApiProduct(product: ApiProduct): Product {
     stock: product.stock,
     comparePrice: product.compareAtPrice,
     image: product.images?.[0] || "/products/placeholder.jpg",
+    images: product.images || [],
     description: product.description,
     variants,
   };

@@ -79,9 +79,9 @@ export default function CrossSellProducts({
             >
               {/* Image */}
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-neutral-100">
-                {product.image ? (
+                {product.images?.[0] || product.image ? (
                   <img
-                    src={product.image}
+                    src={product.images?.[0] || product.image}
                     alt={product.name}
                     className="h-full w-full object-cover transition duration-300 hover:scale-105"
                   />

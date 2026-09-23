@@ -32,7 +32,7 @@ export default function CartItem({
         {/* Product Image */}
         <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-40 sm:w-32">
           <Image
-            src={product.image}
+            src={product.images?.[0] || product.image}
             alt={product.name}
             fill
             className="object-cover"

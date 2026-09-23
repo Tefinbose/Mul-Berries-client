@@ -16,6 +16,7 @@ export type Product = {
   stock?: number;
   comparePrice?: number;
   image: string;
+  images?: string[];
   description: string;
   variants: ProductVariant[];
 };
@@ -28,6 +29,7 @@ export const products: Product[] = [
     price: 8999,
     comparePrice: 10999,
     image: "/products/royal-red-kanjivaram.jpg",
+    images: ["/products/royal-red-kanjivaram.jpg"],
     description:
       "A luxurious red Kanjivaram-inspired silk saree featuring traditional golden zari detailing.",
     variants: [
@@ -55,6 +57,7 @@ export const products: Product[] = [
     price: 9499,
     comparePrice: 11999,
     image: "/products/emerald-green-kanjivaram.jpg",
+    images: ["/products/emerald-green-kanjivaram.jpg"],
     description:
       "Elegant emerald green silk saree designed with a rich traditional border for festive occasions.",
     variants: [
@@ -82,6 +85,7 @@ export const products: Product[] = [
     price: 9299,
     comparePrice: 11499,
     image: "/products/royal-blue-kanjivaram.jpg",
+    images: ["/products/royal-blue-kanjivaram.jpg"],
     description:
       "A sophisticated royal blue silk saree with a timeless zari border.",
     variants: [
@@ -109,6 +113,7 @@ export const products: Product[] = [
     price: 8799,
     comparePrice: 10499,
     image: "/products/magenta-pink-kanjivaram.jpg",
+    images: ["/products/magenta-pink-kanjivaram.jpg"],
     description:
       "A vibrant magenta silk saree that brings a luxurious traditional look to celebrations.",
     variants: [
@@ -136,6 +141,7 @@ export const products: Product[] = [
     price: 8299,
     comparePrice: 9999,
     image: "/products/mustard-gold-silk.jpg",
+    images: ["/products/mustard-gold-silk.jpg"],
     description:
       "A warm mustard silk saree with elegant golden accents, perfect for festive celebrations.",
     variants: [
@@ -163,6 +169,7 @@ export const products: Product[] = [
     price: 8499,
     comparePrice: 9999,
     image: "/products/maroon-pure-silk.jpg",
+    images: ["/products/maroon-pure-silk.jpg"],
     description:
       "A deep maroon pure silk saree crafted for weddings and special occasions.",
     variants: [
@@ -190,6 +197,7 @@ export const products: Product[] = [
     price: 7499,
     comparePrice: 8999,
     image: "/products/aqua-gold-silk.jpg",
+    images: ["/products/aqua-gold-silk.jpg"],
     description:
       "A refreshing aqua silk saree paired with subtle golden detailing.",
     variants: [
@@ -217,6 +225,7 @@ export const products: Product[] = [
     price: 8499,
     comparePrice: 9999,
     image: "/products/teal-designer-silk.jpg",
+    images: ["/products/teal-designer-silk.jpg"],
     description:
       "A contemporary teal silk saree combining traditional elegance with a modern silhouette.",
     variants: [
@@ -244,6 +253,7 @@ export const products: Product[] = [
     price: 9999,
     comparePrice: 11999,
     image: "/products/royal-purple-banarasi.jpg",
+    images: ["/products/royal-purple-banarasi.jpg"],
     description:
       "A rich purple Banarasi-style saree with intricate traditional detailing.",
     variants: [
@@ -271,6 +281,7 @@ export const products: Product[] = [
     price: 7999,
     comparePrice: 9499,
     image: "/products/coral-pink-kanchipuram.jpg",
+    images: ["/products/coral-pink-kanchipuram.jpg"],
     description:
       "A graceful coral pink saree with traditional Kanchipuram-inspired detailing.",
     variants: [
@@ -298,6 +309,7 @@ export const products: Product[] = [
     price: 9499,
     comparePrice: 11999,
     image: "/products/yellow-pink-bridal.jpg",
+    images: ["/products/yellow-pink-bridal.jpg"],
     description:
       "A vibrant yellow and pink bridal saree designed for weddings and grand celebrations.",
     variants: [
@@ -325,6 +337,7 @@ export const products: Product[] = [
     price: 8999,
     comparePrice: 10999,
     image: "/products/wine-red-banarasi.jpg",
+    images: ["/products/wine-red-banarasi.jpg"],
     description:
       "A luxurious wine-red Banarasi silk saree with classic woven detailing.",
     variants: [
@@ -352,6 +365,7 @@ export const products: Product[] = [
     price: 8799,
     comparePrice: 10499,
     image: "/products/peacock-blue-silk.jpg",
+    images: ["/products/peacock-blue-silk.jpg"],
     description:
       "A stunning peacock blue silk saree inspired by traditional Indian craftsmanship.",
     variants: [
@@ -379,6 +393,7 @@ export const products: Product[] = [
     price: 6999,
     comparePrice: 8499,
     image: "/products/rose-pink-designer.jpg",
+    images: ["/products/rose-pink-designer.jpg"],
     description:
       "A delicate rose pink designer saree with an elegant contemporary finish.",
     variants: [
@@ -406,6 +421,7 @@ export const products: Product[] = [
     price: 9199,
     comparePrice: 10999,
     image: "/products/deep-green-kanchipuram.jpg",
+    images: ["/products/deep-green-kanchipuram.jpg"],
     description:
       "A deep green traditional saree with a rich festive appearance.",
     variants: [
@@ -433,6 +449,7 @@ export const products: Product[] = [
     price: 7299,
     comparePrice: 8999,
     image: "/products/lavender-soft-silk.jpg",
+    images: ["/products/lavender-soft-silk.jpg"],
     description:
       "A soft lavender silk saree offering a graceful and sophisticated look.",
     variants: [
@@ -460,6 +477,7 @@ export const products: Product[] = [
     price: 7899,
     comparePrice: 9499,
     image: "/products/black-gold-designer.jpg",
+    images: ["/products/black-gold-designer.jpg"],
     description:
       "A bold black saree enhanced with luxurious golden accents.",
     variants: [
@@ -487,6 +505,7 @@ export const products: Product[] = [
     price: 3299,
     comparePrice: 3999,
     image: "/products/traditional-kerala-kasavu.jpg",
+    images: ["/products/traditional-kerala-kasavu.jpg"],
     description:
       "A timeless Kerala Kasavu saree featuring a classic cream and golden combination.",
     variants: [
@@ -514,6 +533,7 @@ export const products: Product[] = [
     price: 6799,
     comparePrice: 7999,
     image: "/products/ivory-gold-festive.jpg",
+    images: ["/products/ivory-gold-festive.jpg"],
     description:
       "An elegant ivory saree with subtle golden detailing for festive occasions.",
     variants: [
@@ -541,6 +561,7 @@ export const products: Product[] = [
     price: 9299,
     comparePrice: 11499,
     image: "/products/orange-red-wedding-silk.jpg",
+    images: ["/products/orange-red-wedding-silk.jpg"],
     description:
       "A vibrant orange-red silk saree created for weddings and traditional celebrations.",
     variants: [

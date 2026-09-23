@@ -153,7 +153,7 @@ export default function BestSellers() {
                   className="block h-full w-full"
                 >
                   <img
-                    src={product.image}
+                    src={product.images?.[0] || product.image}
                     alt={product.name}
                     className="
                       h-full

@@ -49,7 +49,7 @@ function CartItem({
           className="relative h-28 w-21 shrink-0 overflow-hidden rounded-lg bg-stone-100 sm:h-32 sm:w-24"
         >
           <Image
-            src={product.image}
+            src={product.images?.[0] || product.image}
             alt={product.name}
             fill
             className="object-cover transition duration-300 hover:scale-105"

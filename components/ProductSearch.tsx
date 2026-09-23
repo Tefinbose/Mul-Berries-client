@@ -106,7 +106,7 @@ export default function ProductSearch({
             >
               <div className="h-12 w-10 shrink-0 overflow-hidden rounded bg-[#f5f3ee]">
                 <img
-                  src={product.image}
+                  src={product.images?.[0] || product.image}
                   alt={product.name}
                   className="h-full w-full object-cover"
                 />
