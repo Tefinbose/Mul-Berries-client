@@ -66,22 +66,12 @@ export default function RegisterPage() {
         password: formData.password,
       });
 
-      // Store JWT token
-      localStorage.setItem("token", response.token);
 
-      // Optional: store user information
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.user)
-      );
-
-      // Tell the navbar the user is now logged in
-      window.dispatchEvent(new Event("auth-change"));
 
       alert("Account created successfully!");
 
       // Redirect to homepage
-      router.push("/");
+      router.push("/auth/login");
     } catch (error) {
       console.error("Registration error:", error);
 

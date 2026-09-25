@@ -106,7 +106,7 @@ export default function AdminLayout({
       localStorage.removeItem("user");
       localStorage.removeItem("role");
 
-      router.push("/login");
+      router.push("/auth/login");
     } catch (error) {
       console.error("LOGOUT ERROR:", error);
       setLoggingOut(false);
