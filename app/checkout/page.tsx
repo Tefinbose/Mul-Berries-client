@@ -101,6 +101,22 @@ export default function CheckoutPage() {
   const [success, setSuccess] =
     useState("");
 
+  const [isGuest, setIsGuest] =
+    useState(false);
+
+  const [guestForm, setGuestForm] =
+    useState({
+      name: "",
+      email: "",
+      phone: "",
+      addressLine1: "",
+      addressLine2: "",
+      landmark: "",
+      city: "",
+      state: "",
+      pincode: "",
+    });
+
   const [showAddressForm, setShowAddressForm] =
     useState(false);
 
@@ -120,6 +136,27 @@ export default function CheckoutPage() {
         | "other",
     });
 
+  const handleGuestFormChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setGuestForm((previous) => {
+      const updated = {
+        ...previous,
+        [name]: value,
+      };
+
+      try {
+        sessionStorage.setItem(
+          "guest_checkout_info",
+          JSON.stringify(updated)
+        );
+      } catch {}
+
+      return updated;
+    });
+  };
+
   /*
    * --------------------------------------------------------
    * LOAD CHECKOUT DATA
@@ -136,10 +173,85 @@ export default function CheckoutPage() {
           localStorage.getItem("token");
 
         if (!token) {
-          window.location.href =
-            "/auth/login?redirect=/checkout";
+          setIsGuest(true);
+
+          try {
+            const savedCart =
+              localStorage.getItem("mulberries-cart");
+
+            if (savedCart) {
+              const parsedCart =
+                JSON.parse(savedCart);
+
+              if (Array.isArray(parsedCart)) {
+                const guestItems: CartItem[] =
+                  parsedCart.map((item: any) => ({
+                    _id:
+                      item.variant?.id ||
+                      item.product?._id,
+                    product: {
+                      _id:
+                        item.product?._id || "",
+                      name:
+                        item.product?.name || "",
+                      images:
+                        item.product?.images || [],
+                      price: Number(
+                        item.variant?.price ??
+                          item.product?.price ??
+                          0
+                      ),
+                    },
+                    name:
+                      item.product?.name || "Product",
+                    image:
+                      item.variant?.image ||
+                      item.product?.images?.[0] ||
+                      "",
+                    quantity: Number(
+                      item.quantity || 1
+                    ),
+                    price: Number(
+                      item.variant?.price ??
+                        item.product?.price ??
+                        0
+                    ),
+                    variantId:
+                      item.variant?.sku ||
+                      item.variant?.id,
+                    color: item.variant?.color,
+                    size: item.variant?.size,
+                  }));
+
+                setCartItems(guestItems);
+              }
+            }
+
+            const savedGuestInfo =
+              sessionStorage.getItem(
+                "guest_checkout_info"
+              );
+
+            if (savedGuestInfo) {
+              try {
+                setGuestForm(
+                  JSON.parse(savedGuestInfo)
+                );
+              } catch {}
+            }
+          } catch (storageError) {
+            console.error(
+              "Failed to read guest cart:",
+              storageError
+            );
+          } finally {
+            setLoading(false);
+          }
+
           return;
         }
+
+        setIsGuest(false);
 
         const [
           addressResponse,
@@ -443,7 +555,7 @@ export default function CheckoutPage() {
     token,
   }: {
     orderId: string;
-    token: string;
+    token?: string;
   }) => {
     const razorpayData =
       await createRazorpayOrderApi(
@@ -473,6 +585,18 @@ export default function CheckoutPage() {
           selectedAddressId
       );
 
+    const prefillName = isGuest
+      ? guestForm.name.trim()
+      : selectedAddress?.name || "";
+
+    const prefillPhone = isGuest
+      ? guestForm.phone.trim()
+      : selectedAddress?.phone || "";
+
+    const prefillEmail = isGuest
+      ? guestForm.email.trim()
+      : undefined;
+
     const razorpay =
       new window.Razorpay({
         key:
@@ -494,13 +618,9 @@ export default function CheckoutPage() {
             .razorpayOrderId,
 
         prefill: {
-          name:
-            selectedAddress?.name ||
-            "",
-
-          contact:
-            selectedAddress?.phone ||
-            "",
+          name: prefillName,
+          contact: prefillPhone,
+          email: prefillEmail,
         },
 
         notes: {
@@ -541,6 +661,10 @@ export default function CheckoutPage() {
               );
             }
 
+            localStorage.removeItem("mulberries-cart");
+            sessionStorage.removeItem("guest_checkout_info");
+            window.dispatchEvent(new Event("cart-change"));
+
             window.location.href =
               `/order-success?orderId=${orderId}`;
           } catch (err) {
@@ -578,16 +702,9 @@ export default function CheckoutPage() {
       const token =
         localStorage.getItem("token");
 
-      if (!token) {
+      if (!isGuest && !token) {
         window.location.href =
           "/auth/login?redirect=/checkout";
-        return;
-      }
-
-      if (!selectedAddressId) {
-        setError(
-          "Please select a delivery address."
-        );
         return;
       }
 
@@ -598,20 +715,164 @@ export default function CheckoutPage() {
         return;
       }
 
-      setPlacingOrder(true);
+      let orderId = "";
 
-      const orderData =
-        await createOrder(token);
+      if (!isGuest) {
+        if (!selectedAddressId) {
+          setError(
+            "Please select a delivery address."
+          );
+          return;
+        }
 
-      const orderId =
-        orderData?.order?._id ||
-        orderData?.order?.id;
+        setPlacingOrder(true);
+
+        const orderData =
+          await createOrder(token!);
+
+        orderId =
+          orderData?.order?._id ||
+          orderData?.order?.id;
+      } else {
+        // Validate guest form
+        if (!guestForm.name.trim()) {
+          setError("Please enter recipient name.");
+          return;
+        }
+
+        const emailRegex =
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (
+          !guestForm.email.trim() ||
+          !emailRegex.test(guestForm.email.trim())
+        ) {
+          setError(
+            "Please enter a valid email address."
+          );
+          return;
+        }
+
+        const cleanPhone =
+          guestForm.phone.replace(/\D/g, "");
+
+        if (cleanPhone.length < 10) {
+          setError(
+            "Please enter a valid 10-digit phone number."
+          );
+          return;
+        }
+
+        if (!guestForm.addressLine1.trim()) {
+          setError(
+            "Please enter street address."
+          );
+          return;
+        }
+
+        if (!guestForm.city.trim()) {
+          setError("Please enter city.");
+          return;
+        }
+
+        if (!guestForm.state.trim()) {
+          setError("Please enter state.");
+          return;
+        }
+
+        if (
+          !/^\d{6}$/.test(
+            guestForm.pincode.trim()
+          )
+        ) {
+          setError(
+            "Please enter a valid 6-digit pincode."
+          );
+          return;
+        }
+
+        setPlacingOrder(true);
+
+        const guestOrderPayload = {
+          customer: {
+            name: guestForm.name.trim(),
+            email:
+              guestForm.email.trim().toLowerCase(),
+            phone: cleanPhone,
+          },
+          items: cartItems.map((item) => ({
+            product:
+              typeof item.product === "object"
+                ? item.product._id
+                : item.product,
+            quantity: item.quantity,
+            price: item.price,
+            variantId: item.variantId,
+            color: item.color,
+            size: item.size,
+          })),
+          shippingAddress: {
+            name: guestForm.name.trim(),
+            phone: cleanPhone,
+            addressLine1:
+              guestForm.addressLine1.trim(),
+            addressLine2:
+              guestForm.addressLine2.trim() ||
+              undefined,
+            city: guestForm.city.trim(),
+            state: guestForm.state.trim(),
+            pincode: guestForm.pincode.trim(),
+            country: "India",
+          },
+          paymentMethod,
+          shippingCharge,
+          discount,
+        };
+
+        const response = await fetch(
+          `${API_URL}/orders/guest`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify(
+              guestOrderPayload
+            ),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data?.message ||
+              "Failed to create guest order"
+          );
+        }
+
+        orderId =
+          data?.order?._id ||
+          data?.order?.id;
+      }
 
       if (!orderId) {
         throw new Error(
           "Order ID was not returned by the server."
         );
       }
+
+      // Clear local storage
+      localStorage.removeItem(
+        "mulberries-cart"
+      );
+      sessionStorage.removeItem(
+        "guest_checkout_info"
+      );
+      window.dispatchEvent(
+        new Event("cart-change")
+      );
 
       /*
        * COD
@@ -632,7 +893,7 @@ export default function CheckoutPage() {
 
       await startRazorpayPayment({
         orderId,
-        token,
+        token: token || undefined,
       });
     } catch (err) {
       console.error(err);
@@ -756,293 +1017,443 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* GUEST BANNER */}
+          {isGuest && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pink-200 bg-pink-50/70 p-4 text-sm">
+              <div className="flex items-center gap-2.5 text-stone-800">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d63372] text-xs font-bold text-white">
+                  ✓
+                </span>
+                <span>
+                  You are checking out as a <strong>Guest</strong>.
+                </span>
+              </div>
+              <Link
+                href="/auth/login?redirect=/checkout"
+                className="text-xs font-semibold text-[#d63372] underline-offset-4 hover:underline"
+              >
+                Already have an account? Sign in
+              </Link>
+            </div>
+          )}
+
           <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
             {/* LEFT */}
 
             <div className="space-y-6">
               {/* ADDRESS */}
 
-              <section className="rounded-2xl border border-gray-200 bg-white p-6">
-                <div className="flex items-center justify-between">
+              {isGuest ? (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-[#d63372]">
                       <MapPin size={18} />
                     </div>
 
                     <div>
                       <h2 className="font-semibold text-gray-900">
-                        Delivery Address
+                        Guest Contact & Delivery Address
                       </h2>
 
                       <p className="text-xs text-gray-500">
-                        Where should we deliver your order?
+                        Enter your contact details and where should we deliver your order.
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowAddressForm(
-                        (current) =>
-                          !current
-                      )
-                    }
-                    className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50"
-                  >
-                    <Plus size={14} />
-                    Add Address
-                  </button>
-                </div>
+                  <div className="mt-6 space-y-5 border-t border-gray-100 pt-6">
+                    {/* Contact Details */}
+                    <div>
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Contact Details
+                      </h3>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <input
+                            name="email"
+                            type="email"
+                            value={guestForm.email}
+                            onChange={handleGuestFormChange}
+                            placeholder="Email address (for order updates) *"
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                            required
+                          />
+                        </div>
 
-                {/* ADDRESS FORM */}
-
-                {showAddressForm && (
-                  <form
-                    onSubmit={
-                      handleCreateAddress
-                    }
-                    className="mt-6 grid gap-4 border-t border-gray-100 pt-6"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <input
-                        name="name"
-                        value={
-                          addressForm.name
-                        }
-                        onChange={
-                          handleAddressChange
-                        }
-                        placeholder="Full name"
-                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                        required
-                      />
-
-                      <input
-                        name="phone"
-                        value={
-                          addressForm.phone
-                        }
-                        onChange={
-                          handleAddressChange
-                        }
-                        placeholder="Phone number"
-                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                        required
-                      />
+                        <div>
+                          <input
+                            name="phone"
+                            type="tel"
+                            value={guestForm.phone}
+                            onChange={handleGuestFormChange}
+                            placeholder="Phone number (10 digits) *"
+                            maxLength={10}
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <input
-                      name="addressLine1"
-                      value={
-                        addressForm.addressLine1
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Address line 1"
-                      className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                      required
-                    />
+                    {/* Delivery Address */}
+                    <div className="pt-2">
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Shipping Address
+                      </h3>
+                      <div className="space-y-4">
+                        <input
+                          name="name"
+                          value={guestForm.name}
+                          onChange={handleGuestFormChange}
+                          placeholder="Recipient full name *"
+                          className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                          required
+                        />
 
-                    <input
-                      name="addressLine2"
-                      value={
-                        addressForm.addressLine2
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Address line 2 (optional)"
-                      className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                    />
+                        <input
+                          name="addressLine1"
+                          value={guestForm.addressLine1}
+                          onChange={handleGuestFormChange}
+                          placeholder="House / Flat / Street address *"
+                          className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                          required
+                        />
 
-                    <input
-                      name="landmark"
-                      value={
-                        addressForm.landmark
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Landmark (optional)"
-                      className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                    />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <input
+                            name="addressLine2"
+                            value={guestForm.addressLine2}
+                            onChange={handleGuestFormChange}
+                            placeholder="Apartment, suite, etc. (optional)"
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                          />
 
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <input
-                        name="city"
-                        value={
-                          addressForm.city
-                        }
-                        onChange={
-                          handleAddressChange
-                        }
-                        placeholder="City"
-                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                        required
-                      />
+                          <input
+                            name="landmark"
+                            value={guestForm.landmark}
+                            onChange={handleGuestFormChange}
+                            placeholder="Landmark (optional)"
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                          />
+                        </div>
 
-                      <input
-                        name="state"
-                        value={
-                          addressForm.state
-                        }
-                        onChange={
-                          handleAddressChange
-                        }
-                        placeholder="State"
-                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                        required
-                      />
+                        <div className="grid gap-4 sm:grid-cols-3">
+                          <input
+                            name="city"
+                            value={guestForm.city}
+                            onChange={handleGuestFormChange}
+                            placeholder="City *"
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                            required
+                          />
 
-                      <input
-                        name="pincode"
-                        value={
-                          addressForm.pincode
-                        }
-                        onChange={
-                          handleAddressChange
-                        }
-                        placeholder="Pincode"
-                        inputMode="numeric"
-                        maxLength={6}
-                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
-                        required
-                      />
+                          <input
+                            name="state"
+                            value={guestForm.state}
+                            onChange={handleGuestFormChange}
+                            placeholder="State *"
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                            required
+                          />
+
+                          <input
+                            name="pincode"
+                            value={guestForm.pincode}
+                            onChange={handleGuestFormChange}
+                            placeholder="Pincode (6 digits) *"
+                            inputMode="numeric"
+                            maxLength={6}
+                            className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm outline-none transition focus:border-gray-900"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                        <MapPin size={18} />
+                      </div>
+
+                      <div>
+                        <h2 className="font-semibold text-gray-900">
+                          Delivery Address
+                        </h2>
+
+                        <p className="text-xs text-gray-500">
+                          Where should we deliver your order?
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowAddressForm(
-                            false
-                          )
-                        }
-                        className="rounded-xl border border-gray-300 px-5 py-3 text-sm font-medium"
-                      >
-                        Cancel
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAddressForm(
+                          (current) =>
+                            !current
+                        )
+                      }
+                      className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50"
+                    >
+                      <Plus size={14} />
+                      Add Address
+                    </button>
+                  </div>
 
-                      <button
-                        type="submit"
-                        disabled={
-                          placingOrder
-                        }
-                        className="rounded-xl bg-gray-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
-                      >
-                        Save Address
-                      </button>
-                    </div>
-                  </form>
-                )}
+                  {/* ADDRESS FORM */}
 
-                {/* ADDRESS LIST */}
-
-                <div className="mt-6 space-y-3">
-                  {addresses.length ===
-                  0 ? (
-                    <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center">
-                      <MapPin
-                        size={28}
-                        className="mx-auto text-gray-400"
-                      />
-
-                      <p className="mt-3 text-sm text-gray-600">
-                        No saved addresses.
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowAddressForm(
-                            true
-                          )
-                        }
-                        className="mt-3 text-sm font-medium text-[#d63372]"
-                      >
-                        Add your first address
-                      </button>
-                    </div>
-                  ) : (
-                    addresses.map(
-                      (address) => (
-                        <label
-                          key={
-                            address._id
+                  {showAddressForm && (
+                    <form
+                      onSubmit={
+                        handleCreateAddress
+                      }
+                      className="mt-6 grid gap-4 border-t border-gray-100 pt-6"
+                    >
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <input
+                          name="name"
+                          value={
+                            addressForm.name
                           }
-                          className={`block cursor-pointer rounded-xl border p-4 transition ${
-                            selectedAddressId ===
-                            address._id
-                              ? "border-gray-900 bg-gray-50"
-                              : "border-gray-200 hover:border-gray-400"
-                          }`}
-                        >
-                          <div className="flex gap-3">
-                            <input
-                              type="radio"
-                              name="address"
-                              checked={
-                                selectedAddressId ===
-                                address._id
-                              }
-                              onChange={() =>
-                                setSelectedAddressId(
-                                  address._id
-                                )
-                              }
-                              className="mt-1"
-                            />
+                          onChange={
+                            handleAddressChange
+                          }
+                          placeholder="Full name"
+                          className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                          required
+                        />
 
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-semibold text-gray-900">
+                        <input
+                          name="phone"
+                          value={
+                            addressForm.phone
+                          }
+                          onChange={
+                            handleAddressChange
+                          }
+                          placeholder="Phone number"
+                          className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                          required
+                        />
+                      </div>
+
+                      <input
+                        name="addressLine1"
+                        value={
+                          addressForm.addressLine1
+                        }
+                        onChange={
+                          handleAddressChange
+                        }
+                        placeholder="Address line 1"
+                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                        required
+                      />
+
+                      <input
+                        name="addressLine2"
+                        value={
+                          addressForm.addressLine2
+                        }
+                        onChange={
+                          handleAddressChange
+                        }
+                        placeholder="Address line 2 (optional)"
+                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                      />
+
+                      <input
+                        name="landmark"
+                        value={
+                          addressForm.landmark
+                        }
+                        onChange={
+                          handleAddressChange
+                        }
+                        placeholder="Landmark (optional)"
+                        className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                      />
+
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <input
+                          name="city"
+                          value={
+                            addressForm.city
+                          }
+                          onChange={
+                            handleAddressChange
+                          }
+                          placeholder="City"
+                          className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                          required
+                        />
+
+                        <input
+                          name="state"
+                          value={
+                            addressForm.state
+                          }
+                          onChange={
+                            handleAddressChange
+                          }
+                          placeholder="State"
+                          className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                          required
+                        />
+
+                        <input
+                          name="pincode"
+                          value={
+                            addressForm.pincode
+                          }
+                          onChange={
+                            handleAddressChange
+                          }
+                          placeholder="Pincode"
+                          inputMode="numeric"
+                          maxLength={6}
+                          className="h-12 rounded-xl border border-gray-300 px-4 text-sm outline-none focus:border-gray-900"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowAddressForm(
+                              false
+                            )
+                          }
+                          className="rounded-xl border border-gray-300 px-5 py-3 text-sm font-medium"
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={
+                            placingOrder
+                          }
+                          className="rounded-xl bg-gray-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+                        >
+                          Save Address
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* ADDRESS LIST */}
+
+                  <div className="mt-6 space-y-3">
+                    {addresses.length ===
+                    0 ? (
+                      <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center">
+                        <MapPin
+                          size={28}
+                          className="mx-auto text-gray-400"
+                        />
+
+                        <p className="mt-3 text-sm text-gray-600">
+                          No saved addresses.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowAddressForm(
+                              true
+                            )
+                          }
+                          className="mt-3 text-sm font-medium text-[#d63372]"
+                        >
+                          Add your first address
+                        </button>
+                      </div>
+                    ) : (
+                      addresses.map(
+                        (address) => (
+                          <label
+                            key={
+                              address._id
+                            }
+                            className={`block cursor-pointer rounded-xl border p-4 transition ${
+                              selectedAddressId ===
+                              address._id
+                                ? "border-gray-900 bg-gray-50"
+                                : "border-gray-200 hover:border-gray-400"
+                            }`}
+                          >
+                            <div className="flex gap-3">
+                              <input
+                                type="radio"
+                                name="address"
+                                checked={
+                                  selectedAddressId ===
+                                  address._id
+                                }
+                                onChange={() =>
+                                  setSelectedAddressId(
+                                    address._id
+                                  )
+                                }
+                                className="mt-1"
+                              />
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-gray-900">
+                                    {
+                                      address.name
+                                    }
+                                  </p>
+
+                                  <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-medium uppercase text-gray-600">
+                                    {
+                                      address.type
+                                    }
+                                  </span>
+
+                                  {address.isDefault && (
+                                    <span className="rounded-full bg-green-100 px-2 py-1 text-[10px] font-medium text-green-700">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+
+                                <p className="mt-2 text-sm text-gray-600">
                                   {
-                                    address.name
+                                    address.phone
                                   }
                                 </p>
 
-                                <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-medium uppercase text-gray-600">
+                                <p className="mt-1 text-sm leading-6 text-gray-600">
                                   {
-                                    address.type
+                                    address.addressLine1
                                   }
-                                </span>
 
-                                {address.isDefault && (
-                                  <span className="rounded-full bg-green-100 px-2 py-1 text-[10px] font-medium text-green-700">
-                                    Default
-                                  </span>
-                                )}
+                                  {address.addressLine2 &&
+                                    `, ${address.addressLine2}`}
+
+                                  {address.landmark &&
+                                    `, ${address.landmark}`}
+
+                                  {`, ${address.city}, ${address.state} - ${address.pincode}`}
+                                </p>
                               </div>
-
-                              <p className="mt-2 text-sm text-gray-600">
-                                {
-                                  address.phone
-                                }
-                              </p>
-
-                              <p className="mt-1 text-sm leading-6 text-gray-600">
-                                {
-                                  address.addressLine1
-                                }
-
-                                {address.addressLine2 &&
-                                  `, ${address.addressLine2}`}
-
-                                {address.landmark &&
-                                  `, ${address.landmark}`}
-
-                                {`, ${address.city}, ${address.state} - ${address.pincode}`}
-                              </p>
                             </div>
-                          </div>
-                        </label>
+                          </label>
+                        )
                       )
-                    )
-                  )}
-                </div>
-              </section>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* PAYMENT */}
 
@@ -1334,7 +1745,7 @@ export default function CheckoutPage() {
                   }
                   disabled={
                     placingOrder ||
-                    !selectedAddressId ||
+                    (!isGuest && !selectedAddressId) ||
                     cartItems.length ===
                       0
                   }

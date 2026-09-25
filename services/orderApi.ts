@@ -11,6 +11,19 @@ export const createOrderApi = (
   });
 };
 
+export const createGuestOrderApi = (data: unknown) => {
+  return apiRequest("/orders/guest", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const getGuestOrderByIdApi = (id: string) => {
+  return apiRequest(`/orders/guest/${id}`, {
+    method: "GET",
+  });
+};
+
 export const getMyOrdersApi = (token: string) => {
   return apiRequest("/orders", {
     method: "GET",

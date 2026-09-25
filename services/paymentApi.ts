@@ -44,17 +44,21 @@ export interface VerifyRazorpayPaymentResponse {
 export const createRazorpayOrderApi =
   async (
     orderId: string,
-    token: string
+    token?: string
   ): Promise<CreateRazorpayOrderResponse> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const response = await fetch(
       `${API_URL}/payments/create-order`,
       {
         method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           orderId,
         }),

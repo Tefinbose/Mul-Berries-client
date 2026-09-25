@@ -99,8 +99,13 @@ export default function LoginPage() {
         // Admin and manager go to admin dashboard
         router.push("/admin");
       } else {
-        // Normal customer
-        router.push("/");
+        // Normal customer - check for redirect param
+        const redirectUrl =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("redirect")
+            : null;
+
+        router.push(redirectUrl || "/");
       }
 
       router.refresh();
@@ -412,15 +417,14 @@ export default function LoginPage() {
             <div className="mt-6 border-t border-neutral-200 pt-6 text-center">
 
               <p className="text-xs text-neutral-500">
-                You can also continue shopping without
-                an account.
+                You can also checkout or continue shopping without an account.
               </p>
 
               <Link
-                href="/products"
+                href="/checkout?guest=true"
                 className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full border border-neutral-300 text-sm font-medium text-[#171717] transition hover:border-[#171717] hover:bg-neutral-50"
               >
-                Continue as guest
+                Continue to Guest Checkout
               </Link>
 
             </div>

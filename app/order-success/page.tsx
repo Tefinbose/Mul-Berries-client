@@ -73,6 +73,7 @@ export default function OrderSuccessPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -89,22 +90,22 @@ export default function OrderSuccessPage() {
         }
 
         const token = localStorage.getItem("token");
+        setIsLoggedIn(Boolean(token));
 
-        if (!token) {
-          setError("Please log in to view your order.");
-          return;
+        const fetchUrl = token
+          ? `${API_URL}/orders/${orderId}`
+          : `${API_URL}/orders/guest/${orderId}`;
+
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch(
-          `${API_URL}/orders/${orderId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-          }
-        );
+        const response = await fetch(fetchUrl, {
+          method: "GET",
+          headers,
+          cache: "no-store",
+        });
 
         const data: ApiResponse = await response.json();
 
@@ -641,14 +642,23 @@ export default function OrderSuccessPage() {
 
         {/* Actions */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-
-          <Link
-            href={`/account/orders/${order._id}`}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800"
-          >
-            <Package size={18} />
-            View Order
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href={`/account/orders/${order._id}`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800"
+            >
+              <Package size={18} />
+              View Order
+            </Link>
+          ) : (
+            <Link
+              href="/auth/register"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800"
+            >
+              <Package size={18} />
+              Create Account to Track Order
+            </Link>
+          )}
 
           <Link
             href="/products"
