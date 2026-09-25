@@ -1,17 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Check,
   Heart,
   ShoppingCart,
 } from "lucide-react";
 
 import { products } from "@/lib/products";
+import { useCart } from "@/context/CartContext";
 
 export default function BestSellers() {
+  const { addToCart } = useCart();
+  const [addedSlug, setAddedSlug] = useState<string | null>(null);
+
   // Temporary selection
   const bestSellers = products.slice(4, 8);
+
+  const handleQuickAdd = (product: (typeof products)[0], e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const defaultVariant = product.variants?.[0] || {
+      size: "Free Size",
+      color: "Default",
+      price: product.price,
+      stock: product.stock ?? 10,
+    };
+    addToCart(product, defaultVariant, 1);
+    setAddedSlug(product.slug);
+    setTimeout(() => {
+      setAddedSlug(null);
+    }, 1800);
+  };
 
   return (
     <section className="w-full px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
@@ -215,8 +237,9 @@ export default function BestSellers() {
 
                 <button
                   type="button"
+                  onClick={(e) => handleQuickAdd(product, e)}
                   aria-label={`Add ${product.name} to cart`}
-                  className="
+                  className={`
                     absolute
                     bottom-2
                     right-2
@@ -229,7 +252,6 @@ export default function BestSellers() {
                     justify-center
 
                     rounded-full
-                    bg-[#c73572]
                     text-white
 
                     shadow-sm
@@ -237,19 +259,32 @@ export default function BestSellers() {
                     transition-all
                     duration-300
 
-                    hover:scale-105
-                    hover:bg-[#a8275c]
+                    hover:scale-110
+                    active:scale-95
 
                     sm:bottom-3
                     sm:right-3
                     sm:h-10
                     sm:w-10
-                  "
+                    ${
+                      addedSlug === product.slug
+                        ? "bg-emerald-600 hover:bg-emerald-700"
+                        : "bg-[#f45149] hover:bg-[#e03d35]"
+                    }
+                  `}
                 >
-                  <ShoppingCart
-                    size={15}
-                    strokeWidth={1.8}
-                  />
+                  {addedSlug === product.slug ? (
+                    <Check
+                      size={16}
+                      strokeWidth={2.5}
+                      className="animate-scale-in"
+                    />
+                  ) : (
+                    <ShoppingCart
+                      size={15}
+                      strokeWidth={1.8}
+                    />
+                  )}
                 </button>
               </div>
 

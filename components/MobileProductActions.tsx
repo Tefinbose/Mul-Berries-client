@@ -62,20 +62,20 @@ export default function MobileProductActions({
         type="button"
         disabled={disabled}
         onClick={onAddToCart}
-        className={`${buttonClass} border border-neutral-900 bg-white text-neutral-900`}
+        className={`${buttonClass} bg-[#f45149] uppercase tracking-wider text-white shadow-xs hover:bg-[#e03d35]`}
       >
-        <ShoppingBag size={17} />
-        <span>Add to Bag</span>
+        <ShoppingBag size={16} />
+        <span>Add to Cart</span>
       </button>
 
       <button
         type="button"
         disabled={disabled}
         onClick={onBuyNow}
-        className={`${buttonClass} bg-[#c73572] text-white shadow-sm`}
+        className={`${buttonClass} bg-[#f45149] uppercase tracking-wider text-white shadow-xs hover:bg-[#e03d35]`}
       >
-        <Zap size={17} />
-        <span>Buy at {formattedPrice}</span>
+        <Zap size={16} />
+        <span>Buy Now ({formattedPrice})</span>
       </button>
     </div>
   );

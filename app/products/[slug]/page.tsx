@@ -242,24 +242,20 @@ export default async function ProductPage({
             className="
               min-w-0
               bg-white
+              lg:max-h-[calc(100vh-130px)]
+              lg:overflow-y-auto
             "
           >
             <div
               className="
                 px-3
-                py-4
-
-                sm:px-5
-                sm:py-5
-
-                md:px-5
-                md:py-5
-
-                lg:px-6
-                lg:py-6
-
-                xl:px-7
-                xl:py-7
+                py-3
+                sm:px-4
+                sm:py-3.5
+                lg:px-5
+                lg:py-4
+                xl:px-6
+                xl:py-4
               "
             >
               <ProductDetails

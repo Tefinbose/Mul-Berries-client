@@ -12,6 +12,7 @@ import {
 
 import { products } from "@/lib/products";
 import { getCategoryBySlugApi } from "@/services/categoryApi";
+import ProductCard from "@/components/ProductCard";
 
 const categoryInfo: Record<
   string,
@@ -442,105 +443,9 @@ export default async function CategoryPage({
 
               {/* PRODUCT GRID */}
 
-              <div className="grid min-w-0 grid-cols-2 items-stretch gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4">
-                {categoryProducts.map((product, index) => (
-                  <Link
-                    key={product.slug}
-                    href={`/products/${product.slug}`}
-                    className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition duration-300 hover:-translate-y-0.5 hover:border-[#d6b7c4] hover:shadow-[0_12px_30px_rgba(23,23,23,0.09)]"
-                    style={{
-                      animation:
-                        "productFadeUp 0.45s ease-out forwards",
-                      animationDelay: `${index * 50}ms`,
-                      opacity: 0,
-                    }}
-                  >
-                    {/* IMAGE */}
-
-                    <div className="relative aspect-3/4 overflow-hidden bg-[#f5f3ee]">
-                      <Image
-                        src={product.images?.[0] || product.image}
-                        alt={product.name}
-                        fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                      />
-
-                      {product.comparePrice &&
-                        product.comparePrice >
-                          product.price && (
-                            <div className="absolute left-3 top-3 rounded-full bg-[#c73572] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
-                            SALE
-                          </div>
-                        )}
-
-                      <div className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-900 opacity-0 shadow-sm transition-all duration-300 group-hover:opacity-100">
-                        <ArrowUpRight size={14} />
-                      </div>
-                    </div>
-
-                    {/* PRODUCT INFO */}
-
-                    <div className="flex min-w-0 flex-1 flex-col p-3.5 sm:p-4">
-                      <h2 className="line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-neutral-900 transition-colors group-hover:text-[#c73572] sm:text-sm">
-                        {product.name}
-                      </h2>
-
-                      {/* RATING */}
-
-                      <div className="mt-3 flex min-h-5 items-center gap-1">
-                        <span className="inline-flex items-center gap-0.5 bg-[#388e3c] px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                          4.5
-                          <Star
-                            size={8}
-                            fill="currentColor"
-                          />
-                        </span>
-
-                        <span className="text-[9px] text-neutral-400">
-                          Ratings
-                        </span>
-                      </div>
-
-                      {/* PRICE */}
-
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="text-sm font-semibold text-neutral-950 sm:text-base">
-                          ₹
-                          {product.price.toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-
-                        {product.comparePrice &&
-                          product.comparePrice >
-                            product.price && (
-                            <>
-                              <span className="text-[10px] text-neutral-400 line-through sm:text-xs">
-                                ₹
-                                {product.comparePrice.toLocaleString(
-                                  "en-IN"
-                                )}
-                              </span>
-
-                              <span className="text-[9px] font-medium text-[#388e3c] sm:text-[10px]">
-                                {Math.round(
-                                  ((product.comparePrice -
-                                    product.price) /
-                                    product.comparePrice) *
-                                    100
-                                )}
-                                % off
-                              </span>
-                            </>
-                          )}
-                      </div>
-
-                      <p className="mt-1 text-[9px] text-neutral-500 sm:text-[10px]">
-                        Free delivery
-                      </p>
-                    </div>
-                  </Link>
+              <div className="grid min-w-0 grid-cols-2 items-stretch gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                {categoryProducts.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
                 ))}
               </div>
             </div>

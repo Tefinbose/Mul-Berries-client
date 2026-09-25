@@ -2,13 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { X, ArrowUpRight } from "lucide-react";
+import { X, ShoppingBag, Check } from "lucide-react";
 import { products } from "@/lib/products";
+import { useCart } from "@/context/CartContext";
 
 export default function RecentlyViewed() {
+  const { addToCart } = useCart();
+  const [addedSlug, setAddedSlug] = useState<string | null>(null);
+
   const [recentProducts, setRecentProducts] = useState(
     products.slice(0, 4)
   );
+
+  const handleQuickAdd = (product: (typeof products)[0], e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const defaultVariant = product.variants?.[0] || {
+      size: "Free Size",
+      color: "Default",
+      price: product.price,
+      stock: product.stock ?? 10,
+    };
+    addToCart(product, defaultVariant, 1);
+    setAddedSlug(product.slug);
+    setTimeout(() => {
+      setAddedSlug(null);
+    }, 1800);
+  };
 
   const removeProduct = (slug: string) => {
     setRecentProducts((current) =>
@@ -82,11 +102,32 @@ export default function RecentlyViewed() {
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
-
-                  <span className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-900 opacity-0 shadow-sm transition duration-300 group-hover:opacity-100">
-                    <ArrowUpRight size={15} />
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickAdd(product, e)}
+                    aria-label={`Add ${product.name} to cart`}
+                    className={`
+                      absolute bottom-2.5 right-2.5 z-20 flex h-8 w-8 items-center justify-center rounded-full text-white shadow-sm transition-all duration-300 hover:scale-110 active:scale-95 sm:h-9 sm:w-9
+                      ${
+                        addedSlug === product.slug
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : "bg-[#f45149] hover:bg-[#e03d35]"
+                      }
+                    `}
+                  >
+                    {addedSlug === product.slug ? (
+                      <Check
+                        size={15}
+                        strokeWidth={2.5}
+                        className="animate-scale-in"
+                      />
+                    ) : (
+                      <ShoppingBag
+                        size={14}
+                        strokeWidth={2}
+                      />
+                    )}
+                  </button>
                 </div>
 
                 {/* Details */}

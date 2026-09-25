@@ -48,16 +48,16 @@ export default function ProductGallery({
       {/* =========================
           DESKTOP GALLERY
       ========================== */}
-      <div className="hidden lg:flex lg:gap-3">
+      <div className="hidden lg:flex lg:gap-3 lg:items-start lg:max-h-[calc(100vh-130px)]">
         {/* Thumbnails */}
-        <div className="flex w-[72px] shrink-0 flex-col gap-2">
+        <div className="flex w-14 xl:w-16 shrink-0 flex-col gap-1.5 max-h-[calc(100vh-140px)] overflow-y-auto">
           {safeImages.slice(0, 5).map((image, index) => (
             <button
               key={`${image}-${index}`}
               type="button"
               onClick={() => setActiveIndex(index)}
               aria-label={`View image ${index + 1}`}
-              className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg border bg-neutral-100 transition ${
+              className={`relative aspect-[3/4] w-full overflow-hidden rounded-md border bg-neutral-100 transition ${
                 activeIndex === index
                   ? "border-[#c73572] ring-1 ring-[#c73572]"
                   : "border-neutral-200 hover:border-neutral-400"
@@ -67,7 +67,7 @@ export default function ProductGallery({
                 src={image}
                 alt={`${productName} image ${index + 1}`}
                 fill
-                sizes="72px"
+                sizes="64px"
                 className="object-cover"
               />
             </button>
@@ -76,13 +76,13 @@ export default function ProductGallery({
 
         {/* Main image */}
         <div className="relative min-w-0 flex-1">
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-neutral-100">
+          <div className="relative aspect-[3/4] max-h-[calc(100vh-140px)] w-full overflow-hidden rounded-lg bg-neutral-100">
             <Image
               src={currentImage}
               alt={productName}
               fill
               preload
-              sizes="(min-width: 1536px) 560px, (min-width: 1280px) 500px, (min-width: 1024px) 46vw, 100vw"
+              sizes="(min-width: 1536px) 520px, (min-width: 1280px) 460px, (min-width: 1024px) 42vw, 100vw"
               className="object-cover"
             />
 

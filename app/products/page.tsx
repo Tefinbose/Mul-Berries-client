@@ -13,6 +13,7 @@ import { products } from "@/lib/products";
 import { mapApiProduct } from "@/lib/productMapper";
 import { getProductsApi } from "@/services/productApi";
 import ProductSearch from "@/components/ProductSearch";
+import ProductCard from "@/components/ProductCard";
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -432,75 +433,10 @@ export default async function ProductsPage({
 
             {/* Product Grid */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 items-stretch gap-4 sm:grid-cols-3 lg:gap-5 xl:grid-cols-4">
-                {filteredProducts.map((product) => {
-                  const discount = product.comparePrice
-                    ? Math.round(
-                        ((product.comparePrice - product.price) /
-                          product.comparePrice) *
-                          100
-                      )
-                    : 0;
-
-                  return (
-                    <Link
-                      key={product.slug}
-                      href={`/products/${product.slug}`}
-                      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#e2e2e2] bg-white transition duration-300 hover:-translate-y-0.5 hover:border-[#c9b2bd] hover:shadow-[0_12px_30px_rgba(23,23,23,0.09)]"
-                    >
-                      <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f3ee]">
-                        <Image
-                          src={product.images?.[0] || product.image}
-                          alt={product.name}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className="object-cover transition duration-500 group-hover:scale-105"
-                        />
-
-                        {discount > 0 && (
-                          <span className="absolute left-2 top-2 bg-[#a91d4f] px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white">
-                            {discount}% OFF
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="p-3">
-                        <h2 className="line-clamp-2 min-h-[40px] text-xs font-semibold leading-5 text-neutral-900 sm:text-sm">
-                          {product.name}
-                        </h2>
-
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="text-sm font-bold text-neutral-900">
-                            ₹{product.price.toLocaleString("en-IN")}
-                          </span>
-
-                          {product.comparePrice && (
-                            <span className="text-[11px] text-neutral-400 line-through">
-                              ₹
-                              {product.comparePrice.toLocaleString(
-                                "en-IN"
-                              )}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 flex min-h-5 items-center gap-1">
-                          <span className="flex items-center gap-1 bg-[#388e3c] px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                            4.5
-                            <Star
-                              size={9}
-                              fill="currentColor"
-                            />
-                          </span>
-
-                          <span className="text-[10px] text-neutral-400">
-                            • Free Delivery
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 sm:gap-4 lg:gap-5 xl:grid-cols-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
+                ))}
               </div>
             ) : (
               <div className="flex min-h-[450px] items-center justify-center border border-[#e2e2e2] bg-white px-5 text-center">
